@@ -1,0 +1,627 @@
+{
+  "name": "Label Maker V3",
+  "description": "A modular interface for managing the Label Maker application",
+  "version": "1.0.1.5",
+  "author": "Baby Manager",
+  "language": "python",
+  "entrypoint": "main.pyw",
+  "dependencies": {
+    "python": ">=3.6",
+    "pip": [
+      "pywin32>=228",
+      "pyautogui>=0.9.53",
+      "gspread>=5.0.0",
+      "oauth2client>=4.1.3",
+      "Pillow>=9.0.0"
+    ]
+  },
+  "folders": {
+    "source": ["src"],
+    "assets": ["assets"],
+    "logs": ["logs"],
+    "documentation": ["README.md", "GOOGLE_SHEETS_SETUP.md"]
+  },
+  "tasks": {
+    "run": {
+      "command": "python main.pyw",
+      "description": "Run the Label Maker Management Application"
+    },
+    "install": {
+      "command": "pip install -r requirements.txt",
+      "description": "Install dependencies"
+    },
+    "lint": {
+      "command": "pylint src",
+      "description": "Run linting on source code"
+    },
+    "test": {
+      "command": "pytest tests",
+      "description": "Run tests"
+    },
+    "clean-logs": {
+      "command": "powershell -Command \"Remove-Item -Path logs\\* -Recurse -Force\"",
+      "description": "Clean log files"
+    }
+  },
+  "settings": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.formatting.provider": "autopep8",
+    "python.analysis.typeCheckingMode": "basic",
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/*.pyc": true,
+      "logs/*.log": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/bower_components": true,
+      "**/*.code-search": true,
+      "**/__pycache__": true
+    }
+  },
+  "extensions": {
+    "recommended": [
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "ms-python.black-formatter",
+      "njpwerner.autodocstring",
+      "streetsidesoftware.code-spell-checker",
+      "eamodio.gitlens"
+    ]
+  },
+  "debug": {
+    "configurations": [
+      {
+        "name": "Python: Current File",
+        "type": "python",
+        "request": "launch",
+        "program": "${file}",
+        "console": "integratedTerminal"
+      },
+      {
+        "name": "Python: Main Application",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/main.pyw",
+        "console": "integratedTerminal"
+      }
+    ]
+  },
+  "environments": {
+    "development": {
+      "variables": {
+        "DEBUG": "true",
+        "LOG_LEVEL": "DEBUG"
+      }
+    },
+    "production": {
+      "variables": {
+        "DEBUG": "false",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  },
+  "features": [
+    "Modular application structure",
+    "Centralized configuration management",
+    "Comprehensive logging",
+    "Single-instance mechanism",
+    "Google Sheets integration with persistent connection status",
+    "Returns Data management with tabbed interface",
+    "Auto-copy functionality for tracking numbers",
+    "Print toggle for logging without physical printing",
+    "Mirror Print option for label orientation",
+    "Frame-based UI implementation",
+    "Stay-on-top window functionality",
+    "Labels tab with search and metadata management",
+    "Label details dialog with image preview",
+    "No Record Label functionality for printing without logging",
+    "Enhanced error handling for missing label files",
+    "Scrollable Edit Record window in Returns Data",
+    "Dynamic label count display in welcome window"
+  ],
+  "codeNavigation": {
+    "src/ui/welcome_window.py": {
+      "sections": [
+        {
+          "name": "Imports and Documentation",
+          "startLine": 1,
+          "endLine": 40
+        },
+        {
+          "name": "WelcomeWindow Class",
+          "startLine": 41,
+          "endLine": 110,
+          "description": "Main application window with navigation to all features and stay-on-top management"
+        },
+        {
+          "name": "Initialization",
+          "startLine": 111,
+          "endLine": 135,
+          "description": "Window initialization and setup"
+        },
+        {
+          "name": "UI Creation",
+          "startLine": 136,
+          "endLine": 175,
+          "description": "Main UI creation method"
+        },
+        {
+          "name": "Title Section",
+          "startLine": 176,
+          "endLine": 190,
+          "description": "Title section with label count display"
+        },
+        {
+          "name": "Button Section",
+          "startLine": 191,
+          "endLine": 240,
+          "description": "Button section creation and layout"
+        },
+        {
+          "name": "Button Creation Helper",
+          "startLine": 241,
+          "endLine": 300,
+          "description": "Helper method for creating styled buttons"
+        },
+        {
+          "name": "Version Label",
+          "startLine": 301,
+          "endLine": 315,
+          "description": "Version label creation"
+        },
+        {
+          "name": "User Action",
+          "startLine": 316,
+          "endLine": 440,
+          "description": "Handler for User button click"
+        },
+        {
+          "name": "Management Action",
+          "startLine": 441,
+          "endLine": 540,
+          "description": "Handler for Management button click"
+        },
+        {
+          "name": "Labels Action",
+          "startLine": 541,
+          "endLine": 640,
+          "description": "Handler for Labels button click"
+        },
+        {
+          "name": "Settings Action",
+          "startLine": 641,
+          "endLine": 1140,
+          "description": "Handler for Settings button click and settings dialog"
+        }
+      ],
+      "bookmarks": [
+        {
+          "name": "update_label_count",
+          "line": 65,
+          "description": "Method to update the label count display"
+        },
+        {
+          "name": "select_labels_directory",
+          "line": 1016,
+          "description": "Function to select and update the labels directory"
+        }
+      ]
+    },
+    "src/ui/edit_record_window.py": {
+      "sections": [
+        {
+          "name": "Imports and Documentation",
+          "startLine": 1,
+          "endLine": 10
+        },
+        {
+          "name": "Edit Record Window Class",
+          "startLine": 11,
+          "endLine": 50,
+          "description": "Main window class definition"
+        },
+        {
+          "name": "Initialization",
+          "startLine": 51,
+          "endLine": 80,
+          "description": "Window initialization and setup"
+        },
+        {
+          "name": "UI Creation",
+          "startLine": 81,
+          "endLine": 120,
+          "description": "Main UI creation method"
+        },
+        {
+          "name": "Form Section",
+          "startLine": 121,
+          "endLine": 200,
+          "description": "Form section creation and layout"
+        },
+        {
+          "name": "Button Section",
+          "startLine": 201,
+          "endLine": 250,
+          "description": "Button section creation and layout"
+        },
+        {
+          "name": "Save Action",
+          "startLine": 251,
+          "endLine": 300,
+          "description": "Handler for Save button click"
+        },
+        {
+          "name": "Cancel Action",
+          "startLine": 301,
+          "endLine": 350,
+          "description": "Handler for Cancel button click"
+        }
+      ],
+      "bookmarks": [
+        {
+          "name": "create_edit_form",
+          "line": 122,
+          "description": "Function to create the edit form"
+        },
+        {
+          "name": "save_record",
+          "line": 252,
+          "description": "Function to save the edited record"
+        }
+      ]
+    },
+    "src/ui/create_label_frame.py": {
+      "sections": [
+        {
+          "name": "Imports and Documentation",
+          "startLine": 1,
+          "endLine": 36
+        },
+        {
+          "name": "CreateLabelFrame Class",
+          "startLine": 37,
+          "endLine": 77,
+          "description": "Frame-based implementation of label creation with auto-copy functionality"
+        },
+        {
+          "name": "UI Creation",
+          "startLine": 79,
+          "endLine": 443,
+          "description": "Create the user interface with Print toggle and Mirror Print options"
+        },
+        {
+          "name": "Label Printing",
+          "startLine": 445,
+          "endLine": 625,
+          "description": "Methods for printing labels with enhanced error handling for missing files"
+        },
+        {
+          "name": "Utility Methods",
+          "startLine": 627,
+          "endLine": 784,
+          "description": "Helper methods for UI interaction and text selection"
+        },
+        {
+          "name": "Label Creation Dialog",
+          "startLine": 786,
+          "endLine": 925,
+          "description": "Dialog for creating new labels when files are missing"
+        }
+      ],
+      "bookmarks": [
+        {
+          "name": "_print_label",
+          "line": 445,
+          "description": "Method to handle label printing with enhanced error handling"
+        },
+        {
+          "name": "on_tracking_enter",
+          "line": 199,
+          "description": "Handler for Enter key in tracking field to copy value and move to SKU field"
+        },
+        {
+          "name": "toggle_print_enabled",
+          "line": 303,
+          "description": "Method to toggle print functionality on/off"
+        }
+      ]
+    },
+    "src/ui/no_record_label_frame.py": {
+      "sections": [
+        {
+          "name": "Imports and Documentation",
+          "startLine": 1,
+          "endLine": 20
+        },
+        {
+          "name": "NoRecordLabelFrame Class",
+          "startLine": 21,
+          "endLine": 200,
+          "description": "Frame for creating labels without logging with Pin toggle for stay-on-top functionality"
+        }
+      ]
+    },
+    "src/utils/returns_operations.py": {
+      "sections": [
+        {
+          "name": "Imports and Documentation",
+          "startLine": 1,
+          "endLine": 10
+        },
+        {
+          "name": "Data Loading Functions",
+          "startLine": 11,
+          "endLine": 80,
+          "description": "Functions for loading and updating returns data"
+        },
+        {
+          "name": "Dialog Creation Functions",
+          "startLine": 81,
+          "endLine": 183,
+          "description": "Functions for creating returns data dialogs"
+        },
+        {
+          "name": "Edit Record Dialog",
+          "startLine": 184,
+          "endLine": 371,
+          "description": "Function for creating and managing the edit record dialog"
+        }
+      ],
+      "bookmarks": [
+        {
+          "name": "load_returns_data",
+          "line": 12,
+          "description": "Function to load returns data from log file"
+        },
+        {
+          "name": "update_log_file",
+          "line": 56,
+          "description": "Function to update the log file with treeview data"
+        },
+        {
+          "name": "create_returns_dialog",
+          "line": 81,
+          "description": "Function to create the returns data dialog"
+        },
+        {
+          "name": "create_edit_dialog",
+          "line": 185,
+          "description": "Function to create the scrollable edit record dialog"
+        }
+      ]
+    },
+    "src/product_data/product_data_manager.py": {
+      "sections": [
+        {
+          "name": "Imports and Documentation",
+          "startLine": 1,
+          "endLine": 4
+        },
+        {
+          "name": "ProductDataManager Class",
+          "startLine": 5,
+          "endLine": 10,
+          "description": "Class for managing product data from CSV files"
+        },
+        {
+          "name": "Data Loading",
+          "startLine": 12,
+          "endLine": 32,
+          "description": "Methods for loading product data from CSV files"
+        },
+        {
+          "name": "Data Retrieval",
+          "startLine": 34,
+          "endLine": 42,
+          "description": "Methods for searching and retrieving product data"
+        },
+        {
+          "name": "Label Enrichment",
+          "startLine": 44,
+          "endLine": 58,
+          "description": "Methods for enriching label records with product data"
+        }
+      ],
+      "bookmarks": [
+        {
+          "name": "load_all",
+          "line": 12,
+          "description": "Method to load all product data from CSV files"
+        },
+        {
+          "name": "enrich_label_record",
+          "line": 44,
+          "description": "Method to enrich label records with additional product information"
+        }
+      ]
+    },
+    "src/utils/ui_components.py": {
+      "sections": [
+        {
+          "name": "Imports and Documentation",
+          "startLine": 1,
+          "endLine": 10
+        },
+        {
+          "name": "Title Components",
+          "startLine": 11,
+          "endLine": 50,
+          "description": "Functions for creating title sections"
+        },
+        {
+          "name": "Button Components",
+          "startLine": 51,
+          "endLine": 150,
+          "description": "Functions for creating styled buttons and button grids"
+        },
+        {
+          "name": "Form Components",
+          "startLine": 151,
+          "endLine": 280,
+          "description": "Functions for creating form fields and groups"
+        },
+        {
+          "name": "Status Components",
+          "startLine": 281,
+          "endLine": 350,
+          "description": "Functions for creating status bars and displays"
+        }
+      ],
+      "bookmarks": [
+        {
+          "name": "create_title_section",
+          "line": 12,
+          "description": "Function to create standardized title sections"
+        },
+        {
+          "name": "create_colored_button",
+          "line": 51,
+          "description": "Function to create colored buttons with hover effects"
+        },
+        {
+          "name": "create_button_grid",
+          "line": 115,
+          "description": "Function to create a grid of buttons"
+        },
+        {
+          "name": "create_form_field_group",
+          "line": 198,
+          "description": "Function to create form field groups"
+        },
+        {
+          "name": "create_sheets_status_display",
+          "line": 310,
+          "description": "Function to create Google Sheets status display"
+        }
+      ]
+    },
+    "src/ui/labels_tab.py": {
+      "sections": [
+        {
+          "name": "Imports and Documentation",
+          "startLine": 1,
+          "endLine": 26
+        },
+        {
+          "name": "LabelsTab Class",
+          "startLine": 27,
+          "endLine": 61,
+          "description": "Tab for viewing and managing label metadata"
+        },
+        {
+          "name": "Database Initialization",
+          "startLine": 63,
+          "endLine": 81,
+          "description": "Initialize the database and load initial data"
+        },
+        {
+          "name": "UI Creation",
+          "startLine": 83,
+          "endLine": 245,
+          "description": "Create the user interface elements"
+        },
+        {
+          "name": "Data Loading",
+          "startLine": 247,
+          "endLine": 315,
+          "description": "Load data into the treeview based on current filters"
+        },
+        {
+          "name": "Pagination",
+          "startLine": 317,
+          "endLine": 337,
+          "description": "Pagination control methods"
+        },
+        {
+          "name": "Label Viewing",
+          "startLine": 348,
+          "endLine": 421,
+          "description": "Methods for viewing label details"
+        },
+        {
+          "name": "Record Management",
+          "startLine": 423,
+          "endLine": 468,
+          "description": "Methods for managing label records"
+        }
+      ],
+      "bookmarks": [
+        {
+          "name": "_load_data",
+          "line": 247,
+          "description": "Method to load and filter label data"
+        },
+        {
+          "name": "_view_label",
+          "line": 348,
+          "description": "Method to view label details"
+        },
+        {
+          "name": "_delete_selected",
+          "line": 433,
+          "description": "Method to delete selected label records"
+        }
+      ]
+    },
+    "src/utils/dialog_handlers.py": {
+      "sections": [
+        {
+          "name": "Imports and Documentation",
+          "startLine": 1,
+          "endLine": 20
+        },
+        {
+          "name": "Create Label Dialog",
+          "startLine": 21,
+          "endLine": 256,
+          "description": "Dialog for creating and printing labels"
+        },
+        {
+          "name": "User Dialog",
+          "startLine": 258,
+          "endLine": 455,
+          "description": "Dialog for user input with SKU validation"
+        },
+        {
+          "name": "Labels Dialog",
+          "startLine": 457,
+          "endLine": 549,
+          "description": "Dialog for viewing and editing returns data"
+        },
+        {
+          "name": "Settings Dialog Handler",
+          "startLine": 551,
+          "endLine": 621,
+          "description": "Handler for settings dialog creation"
+        },
+        {
+          "name": "Google Sheets Dialog Handler",
+          "startLine": 623,
+          "endLine": 638,
+          "description": "Handler for Google Sheets configuration dialog"
+        }
+      ],
+      "bookmarks": [
+        {
+          "name": "create_label_dialog",
+          "line": 21,
+          "description": "Function to create the label dialog with auto-copy and tab functionality"
+        },
+        {
+          "name": "on_tracking_enter",
+          "line": 83,
+          "description": "Handler for Enter key in tracking field to copy value and move to SKU field"
+        },
+        {
+          "name": "print_label",
+          "line": 130,
+          "description": "Function to handle label printing"
+        }
+      ]
+    }
+  }
+}

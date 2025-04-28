@@ -1,0 +1,62 @@
+{
+  "app": {
+    "version": "1.0.0",
+    "theme": "light",
+    "window": {
+      "width": 560,
+      "height": 525,
+      "remember_position": true,
+      "position": {
+        "x": null,
+        "y": null
+      }
+    },
+    "startup": {
+      "check_for_updates": true,
+      "show_welcome": true
+    }
+  },
+  "google_sheets": {
+    "google_sheet_url": "https://docs.google.com/spreadsheets/d/1diiRGC3uRyRpA9yWD2-mFEaTVwdp4RrhOBQlYNhPXO8/edit?usp=sharing",
+    "google_sheet_name": "Tech 1\ud83d\udd16 Work \ud83d\udce6",
+    "google_sheet_id": "1diiRGC3uRyRpA9yWD2-mFEaTVwdp4RrhOBQlYNhPXO8",
+    "google_sheets_connection_status": "Connected",
+    "auto_sync": false,
+    "sync_interval_minutes": 5,
+    "last_sync_time": null,
+    "columns": {
+      "tracking_column": "A",
+      "tracking_row": 1,
+      "sku_column": "B",
+      "sku_row": 1,
+      "steps_column": "C",
+      "steps_row": 1
+    }
+  },
+  "user_preferences": {
+    "confirm_before_edit": true,
+    "auto_save": true,
+    "save_interval_minutes": 2,
+    "default_view": "table",
+    "show_tooltips": true,
+    "date_format": "MM/DD/YYYY",
+    "language": "en-US",
+    "notifications": {
+      "enabled": true,
+      "sound": true,
+      "sync_complete": true,
+      "sync_error": true
+    }
+  },
+  "recent_files": [],
+  "advanced": {
+    "debug_mode": false,
+    "log_level": "INFO",
+    "max_log_size_mb": 5,
+    "max_log_files": 3,
+    "backup_enabled": true,
+    "backup_interval_days": 7,
+    "backup_location": null,
+    "max_backups": 5
+  }
+}

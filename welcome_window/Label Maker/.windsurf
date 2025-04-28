@@ -1,0 +1,48 @@
+{
+  "name": "Label Maker",
+  "version": "3.0.0",
+  "description": "A desktop application for creating and managing warehouse product labels",
+  "author": {
+    "name": "Justin"
+  },
+  "type": "desktop",
+  "main": "main.pyw",
+  "environment": "python",
+  "requirements": [
+    "tkinter",
+    "pandas",
+    "pillow",
+    "pywin32"
+  ],
+  "scripts": {
+    "start": "pythonw main.pyw",
+    "build": "pyinstaller --onefile --windowed --icon=assets/icon_64.png main.pyw"
+  },
+  "dependencies": {
+    "python": ">=3.8.0"
+  },
+  "assets": [
+    "assets/*",
+    "fonts/*",
+    "src/**/*"
+  ],
+  "packaging": {
+    "outputDir": "dist",
+    "includeFiles": [
+      "assets",
+      "fonts",
+      "src",
+      "label_maker_settings.json"
+    ]
+  },
+  "windows": {
+    "appId": "com.codeium.labelmaker.1.0",
+    "productName": "Label Maker",
+    "fileAssociations": [
+      {
+        "ext": "csv",
+        "description": "CSV Files for Batch Label Creation"
+      }
+    ]
+  }
+}

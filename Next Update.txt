@@ -1,0 +1,38 @@
+Pillow>=10.0.0
+pywin32>=306
+pandas>=2.0.0
+pyautogui>=0.9.54
+python-barcode>=0.14.0
+gspread>=6.0.0
+oauth2client>=4.1.3
+psutil>=5.9.0
+tkcalendar>=1.6.1
+
+FIXED	-----------	Check Label Data in Returns Data, the Variant is not showing in the Labels
+
+FIXED	-----------	Label MAKER Settings
+	FIXED	-----------	Make label settings work, and DPI work, I had to increase the DPI to 4000, to print into a 1.5 x 1.5 Label
+
+Integrate the way Google Sheets should look for data.
+	
+		Working	-----------	Howto! Integrate the Sheet into the System.
+		
+		Draft a plan to automate Wrk ALL Daily record data from a scheduler automatically. Manually transfer data from Steps!
+		Automate Wrk ALL within the software, Add another Field to Settings, so it can add data to WRK ALL, and DELETE Daily Data from Steps!
+
+	MAKE A SETTING WHERE THE USER CHOOSES THE SHEET NAME HEADERS FOR ALL THE SHEETS, LEAVE THE DEFAULT NAMING AS IS
+
+	RL
+
+	Techs'
+
+	Wrk ALL
+
+	Steps!
+
+Screenshot Google Sheets Connection
+
+	Write a guide on: 
+		How To Integrate the Google Sheets Sheet into the System.
+		How To Add and Remove Users from Steps! sheet
+		How To Add Data from Steps! sheet over to Wrk ALL sheet

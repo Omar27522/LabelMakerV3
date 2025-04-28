@@ -1,0 +1,36 @@
+{
+  "project": {
+    "name": "Sheets Manager",
+    "type": "python-gui",
+    "entry": "main.pyw",
+    "description": "A modular desktop app for managing Google Sheets with a Tkinter-based UI.",
+    "python_version": ">=3.6"
+  },
+  "dependencies": [
+    "tkinter",
+    "requests",
+    "google-auth",
+    "google-auth-oauthlib",
+    "google-api-python-client",
+    "pywin32"
+  ],
+  "assets": [
+    "assets/icon_64.png",
+    "assets/icon/icon_64.png",
+    "assets/returnsdata_64.png"
+  ],
+  "scripts": {
+    "start": "pythonw main.pyw"
+  },
+  "env": {
+    "PYTHONUNBUFFERED": "1"
+  },
+  "test": {
+    "enabled": true,
+    "framework": "unittest",
+    "test_dir": "tests"
+  },
+  "platform": [
+    "windows"
+  ]
+}

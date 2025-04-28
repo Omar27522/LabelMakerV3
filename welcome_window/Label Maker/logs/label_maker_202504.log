@@ -1,0 +1,14 @@
+2025-04-22 09:46:51,748 - LabelMaker - ERROR - Error creating batch labels: Missing required columns in CSV: Goods Barcode, Goods Name
+CSV must contain columns: Goods Barcode, Goods Name
+2025-04-22 09:48:15,930 - LabelMaker - INFO - Application shutting down
+2025-04-22 09:48:24,171 - LabelMaker - ERROR - Error creating batch labels: Missing required columns in CSV: Goods Barcode, Goods Name
+CSV must contain columns: Goods Barcode, Goods Name
+2025-04-22 09:48:48,421 - LabelMaker - ERROR - Error creating batch labels: Missing required columns in CSV: Goods Barcode, Goods Name
+CSV must contain columns: Goods Barcode, Goods Name
+2025-04-22 09:48:56,090 - LabelMaker - INFO - Application shutting down
+2025-04-22 09:49:16,388 - LabelMaker - ERROR - Error creating batch labels: Missing required columns in CSV: Goods Barcode, Goods Name
+CSV must contain columns: Goods Barcode, Goods Name
+2025-04-22 09:50:28,563 - LabelMaker - INFO - Application shutting down
+2025-04-22 09:50:49,855 - LabelMaker - ERROR - Error creating batch labels: 'Goods Barcode'
+2025-04-22 09:51:58,122 - LabelMaker - INFO - Application shutting down
+2025-04-22 09:52:22,603 - LabelMaker - INFO - Application shutting down
