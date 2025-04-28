@@ -89,7 +89,7 @@ The first time you launch the application, it may take a few moments to initiali
 
 When you first open LabelMakerV3, you'll see the Welcome screen:
 
-![Welcome Screen](/home/ubuntu/guide/images/welcome.jpg)
+![Welcome Screen](https://github.com/Omar27522/LabelMakerV3/blob/main/Screen-Shots/welcome.jpg))
 
 The Welcome screen is your starting point for using LabelMakerV3. Let's look at the key elements:
 
