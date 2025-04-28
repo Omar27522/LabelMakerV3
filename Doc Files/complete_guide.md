@@ -120,7 +120,7 @@ The User section (green button on the Welcome screen) is designed for day-to-day
 
 When you click on the User button, you'll be taken to the Label Maker interface:
 
-![Label Maker](/home/ubuntu/guide/images/Label Maker.jpg)
+![Label Maker](https://github.com/Omar27522/LabelMakerV3/blob/main/Screen-Shots/Label%20Maker.jpg)
 
 The Label Maker interface includes:
 
