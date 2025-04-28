@@ -166,7 +166,7 @@ The Settings section (gray button on the Welcome screen) allows you to configure
 
 When you click on the Settings button, you'll see the Settings screen:
 
-![Settings](/home/ubuntu/guide/images/Settings.jpg)
+![Settings](https://github.com/Omar27522/LabelMakerV3/blob/main/Screen-Shots/Settings.jpg)
 
 The Settings screen includes:
 
