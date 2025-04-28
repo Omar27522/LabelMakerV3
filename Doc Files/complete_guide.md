@@ -1,6 +1,6 @@
 ---
 title: "LabelMakerV3 User Guide"
-author: "Prepared for Justin"
+author: "Prepared for User"
 date: "April 18, 2025"
 geometry: "margin=1in"
 output: pdf_document
