@@ -1,6 +1,6 @@
 ---
 title: "LabelMakerV3 User Guide"
-author: "Prepared for Justin"
+author: "Prepared for User"
 date: "April 18, 2025"
 geometry: "margin=1in"
 output: pdf_document
@@ -89,7 +89,7 @@ The first time you launch the application, it may take a few moments to initiali
 
 When you first open LabelMakerV3, you'll see the Welcome screen:
 
-![Welcome Screen](/home/ubuntu/guide/images/welcome.jpg)
+![Welcome Screen](https://github.com/Omar27522/LabelMakerV3/blob/main/Screen-Shots/welcome.jpg))
 
 The Welcome screen is your starting point for using LabelMakerV3. Let's look at the key elements:
 
@@ -120,7 +120,7 @@ The User section (green button on the Welcome screen) is designed for day-to-day
 
 When you click on the User button, you'll be taken to the Label Maker interface:
 
-![Label Maker](/home/ubuntu/guide/images/Label Maker.jpg)
+![Label Maker](https://github.com/Omar27522/LabelMakerV3/blob/main/Screen-Shots/Label%20Maker.jpg)
 
 The Label Maker interface includes:
 
@@ -166,7 +166,7 @@ The Settings section (gray button on the Welcome screen) allows you to configure
 
 When you click on the Settings button, you'll see the Settings screen:
 
-![Settings](/home/ubuntu/guide/images/Settings.jpg)
+![Settings](https://github.com/Omar27522/LabelMakerV3/blob/main/Screen-Shots/Settings.jpg)
 
 The Settings screen includes:
 
