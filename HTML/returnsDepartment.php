@@ -33,4 +33,4 @@
     more meaningful travel experiences for people around the world.</p>
   </aside>    
 </section>
-<a href="?dailyTasks"><button>Next</button></a>
+<?php echo $button;?>

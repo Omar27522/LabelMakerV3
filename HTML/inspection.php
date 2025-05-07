@@ -28,4 +28,4 @@
   <h2>Receive, Item Info, </h2>
   <h2>Container Card, Put Away.</h2>
 
-  <a href="?labeling"><button>Next</button></a>
+<?php echo $button;?> 

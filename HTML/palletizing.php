@@ -12,7 +12,4 @@ two or more people will help unload it. Two different products arrive, AWAY and 
 <aside>
 Once all tracking numbers are recorded, they will be placed in a metal basket to then be transported to the returns department. Once they arrive, they will be removed from the baskets and placed on a pallet to be wrapped and counted.
 </aside>
-
-
-<a href="../"><button>Next</button></a>
-<?php include 'menu/footer.php'; ?>
+<?php echo $button;?>

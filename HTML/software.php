@@ -17,5 +17,4 @@
 </ul>
 </h2>
 </section>
-
-<a href="?inspections"><button>Next</button></a>
+<?php echo $button;?>
