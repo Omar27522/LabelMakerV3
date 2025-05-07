@@ -10,8 +10,10 @@
   <li><a href="./media/software/label_maker.jpg">Label Maker</a></li>
   <li><a href="./media/software/label_maker_settings.jpg">Label Maker Settings</a></li>
   <li><a href="./media/software/view_files.jpg">View Files</a></li>
-  <li>Customize company information that appears on labels</li>
-  <li>Set default carrier and shipping preferences</li>
+  <li><a href="./media/software/label_maker_create_label.jpg">Label Maker Create Label</a></li>
+  <li><a href="./media/software/label_maker_create_label_label.jpg">Label Maker Create Label Label</a></li>
+  <li><a href="./media/software/label_maker_create_no-record.jpg">Label Maker No-Record Label</a></li>
+
 </ul>
 </h2>
 </section>

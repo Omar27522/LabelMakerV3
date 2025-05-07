@@ -3,53 +3,34 @@
 $uri = ucfirst(ltrim($_SERVER['REQUEST_URI'], " /?"));
 
 if(isset($_GET['returnsDepartment'])) {
-    
     $title = $uri;
-}
-else if(isset($_GET['dailyTasks'])) {
-    $title = $uri;
-}
-else if(isset($_GET['software'])) {
-    $title = $uri;
-}
-else if(isset($_GET['inspections'])) {
-    $title = $uri;
-   
-}
-else if(isset($_GET['labeling'])) {
-    $title = $uri;
-}
-else if(isset($_GET['palletizing'])) {
-    $title = $uri;
-}
-else    { 
-$title="JDL Returns Department";
-}
-
- include 'menu/header.php';
-
-
-if(isset($_GET['returnsDepartment'])) {
-    
+    include 'menu/header.php';
     include './returnsDepartment.php';
 }
 else if(isset($_GET['dailyTasks'])) {
+    $title = $uri;
+    include 'menu/header.php';
     include './dailyTasks.php';
 }
-else if(isset($_GET['software'])) {
-    include './software.php';
-}
 else if(isset($_GET['inspections'])) {
+    $title = $uri;
+    include 'menu/header.php';
     include './inspection.php';
-   
 }
 else if(isset($_GET['labeling'])) {
+    $title = $uri;
+    include 'menu/header.php';
     include './labeling.php';
 }
 else if(isset($_GET['palletizing'])) {
+    $title = $uri;
+    include 'menu/header.php';
     include './palletizing.php';
 }
-else    { ?>
+else    { 
+    $title="JDL Returns Department";
+    include 'menu/header.php';
+?>
 <section>
 <h1>JDL
     Returns
