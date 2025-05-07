@@ -40,4 +40,4 @@
     label will include the date the items arrived at the warehouse, the number of products on the pallet,and a legend
     stating that they are indeed RETURNS. Then the sorting, cleaning, re-boxing, re-labeling, and grading of the
     products begin.</h1>
-<a href="?inspections"><button>Next</button></a>
+<a href="?software"><button>Next</button></a>

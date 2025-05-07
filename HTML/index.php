@@ -9,6 +9,9 @@ if(isset($_GET['returnsDepartment'])) {
 else if(isset($_GET['dailyTasks'])) {
     $title = $uri;
 }
+else if(isset($_GET['software'])) {
+    $title = $uri;
+}
 else if(isset($_GET['inspections'])) {
     $title = $uri;
    
@@ -32,6 +35,9 @@ if(isset($_GET['returnsDepartment'])) {
 }
 else if(isset($_GET['dailyTasks'])) {
     include './dailyTasks.php';
+}
+else if(isset($_GET['software'])) {
+    include './software.php';
 }
 else if(isset($_GET['inspections'])) {
     include './inspection.php';
