@@ -1,48 +1,33 @@
 <?php
-
 $uri = ucfirst(ltrim($_SERVER['REQUEST_URI'], " /?"));
+$button="";
 $button2 ='<button>Next</button></a>';
-if(isset($_GET['returnsDepartment'])) {
+$button1= '<a href="?'.$button.'">';
+function content($content, $button) {
+    global $title,$button2,$button1,$button,$uri;
     $title = $uri;
-    $button1= '<a href="?dailyTasks">';
     $button = $button1 . $button2;
     include 'menu/header.php';
-    include './returnsDepartment.php';
+    include './'.$content.'.php';
+}
+
+if(isset($_GET['returnsDepartment'])) {
+    content("returnsDepartment","dailyTasks");
 }
 else if(isset($_GET['dailyTasks'])) {
-    $title = $uri;
-    $button1= '<a href="?software">';
-    $button = $button1 . $button2;
-    include 'menu/header.php';
-    include './dailyTasks.php';
+    content("dailyTasks","software");
 }
 else if(isset($_GET['software'])) {
-    $title = $uri;
-    $button1= '<a href="?inspections">';
-    $button = $button1 . $button2;
-    include 'menu/header.php';
-    include './software.php';
+    content("software","inspections");
 }
 else if(isset($_GET['inspections'])) {
-    $title = $uri;
-    $button1= '<a href="?labeling">';
-    $button = $button1 . $button2;
-    include 'menu/header.php';
-    include './inspection.php';
+    content("inspections","labeling");
 }
 else if(isset($_GET['labeling'])) {
-    $title = $uri;
-    $button1= '<a href="?palletizing">';
-    $button = $button1 . $button2;
-    include 'menu/header.php';
-    include './labeling.php';
+    content("labeling","palletizing");
 }
 else if(isset($_GET['palletizing'])) {
-    $title = $uri;
-    $button1= '<a href="../">';
-    $button = $button1 . $button2;
-    include 'menu/header.php';
-    include './palletizing.php';
+    content("palletizing","index");
 }
 else    { 
     $title="JDL Returns Department";
