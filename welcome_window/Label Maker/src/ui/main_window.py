@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from typing import Optional, Dict, Any, Callable
 import os
+import sys
 from PIL import Image, ImageTk
 import pyautogui
 import pandas as pd
@@ -339,29 +340,72 @@ class MainWindow(tk.Tk):
         # Store preview label reference
         self.file_window.preview_label = preview_label
 
-        # Create bottom button frame
-        button_frame = tk.Frame(main_content)
-        button_frame.pack(fill=tk.X, padx=2, pady=2)
-
-        # Left side for buttons
-        tk.Button(button_frame, text="Open", command=self.open_selected_file,
-                 bg='#e3f2fd', activebackground='#bbdefb',
-                 font=('TkDefaultFont', 9, 'bold'),
-                 relief='raised',
-                 width=15,
-                 height=2
-                ).pack(side=tk.LEFT, padx=2)
-
-        tk.Button(button_frame, text="Print", command=self.print_selected_file,
-                 bg='#e8f5e9', activebackground='#c8e6c9',
-                 font=('TkDefaultFont', 9, 'bold'),
-                 relief='raised',
-                 width=15,
-                 height=2
-                ).pack(side=tk.LEFT, padx=2)
+        # Create bottom frame for buttons
+        bottom_frame = tk.Frame(main_content)
+        bottom_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        # Create buttons for file operations
+        open_btn = tk.Button(bottom_frame, text="Open", width=8, command=self.open_selected_file)
+        open_btn.pack(side=tk.LEFT, padx=5)
+        self.CreateToolTip(open_btn, "Open the selected file (Ctrl+O)")
+        
+        print_btn = tk.Button(bottom_frame, text="Print", width=8, command=self.print_selected_file)
+        print_btn.pack(side=tk.LEFT, padx=5)
+        self.CreateToolTip(print_btn, "Print the selected file (Ctrl+P)")
+        
+        # Create a compact frame for browser buttons in the bottom right
+        browser_frame = tk.Frame(bottom_frame, width=250)
+        browser_frame.pack(side=tk.RIGHT, padx=5)
+        
+        # Track browser tab states for this dialog
+        self.view_files_reverse_tab_open = False
+        self.view_files_receive_tab_open = False
+        
+        # Create a small status indicator
+        self.view_files_status_indicator = tk.Canvas(browser_frame, width=8, height=8, bg='#f0f0f0', highlightthickness=0)
+        self.view_files_status_indicator.pack(side=tk.RIGHT, padx=(0, 5), pady=5)
+        
+        # Create the buttons with a compact design
+        button_style = {
+            'font': ('TkDefaultFont', 8),
+            'relief': 'flat',
+            'width': 10,
+            'height': 1,
+            'padx': 3,
+            'pady': 1,
+            'borderwidth': 1
+        }
+        
+        # Create the Receive button
+        self.view_files_receive_button = tk.Button(
+            browser_frame, 
+            text="Receive", 
+            bg='#27ae60',  # Green
+            fg='white',
+            activebackground='#2ecc71',  # Lighter green
+            **button_style,
+            command=lambda: self.toggle_view_files_tab('receive')
+        )
+        self.view_files_receive_button.pack(side=tk.RIGHT, padx=2)
+        
+        # Create the Reverse Inbound button with emoji
+        self.view_files_reverse_button = tk.Button(
+            browser_frame, 
+            text="↩️Inbound", 
+            bg='#4169E1',  # Royal Blue
+            fg='white',
+            activebackground='#1E90FF',  # Dodger Blue
+            **button_style,
+            command=lambda: self.toggle_view_files_tab('reverse')
+        )
+        self.view_files_reverse_button.pack(side=tk.RIGHT, padx=2)
+        
+        # Add tooltips for the buttons
+        self.CreateToolTip(self.view_files_receive_button, "Open or close JDL Scan/Receive page")
+        self.CreateToolTip(self.view_files_reverse_button, "Open or close JDL After Sales Order page")
 
         # Right side for last print info
-        last_print_label = tk.Label(button_frame, text="", font=('TkDefaultFont', 9), fg='#666666')
+        last_print_label = tk.Label(bottom_frame, text="", font=('TkDefaultFont', 9), fg='#666666')
         last_print_label.pack(side=tk.RIGHT, padx=(0, 10), pady=5)
 
         def update_file_list(*args):
@@ -509,58 +553,762 @@ class MainWindow(tk.Tk):
 
         # Force initial preview to be size 3
         show_preview(None)
+        
+        # Create a compact frame for the browser buttons with fixed width
+        browser_frame = tk.Frame(bottom_frame, width=320)
+        browser_frame.pack(side=tk.RIGHT, padx=5)
+        browser_frame.pack_propagate(False)  # Prevent the frame from resizing based on content
+        
+        # Track browser tab states
+        self.reverse_tab_open = False
+        self.receive_tab_open = False
+        self.browser_used = None
+        
+        # Create a small status indicator instead of a full label
+        self.browser_status_indicator = tk.Canvas(browser_frame, width=10, height=10, bg='#f0f0f0', highlightthickness=0)
+        self.browser_status_indicator.pack(side=tk.RIGHT, padx=(0, 5))
+        
+        # Create button container to keep buttons aligned
+        button_container = tk.Frame(browser_frame)
+        button_container.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Create the buttons with a more compact design
+        button_style = {
+            'font': ('TkDefaultFont', 8),
+            'relief': 'flat',
+            'width': 12,
+            'height': 1,
+            'padx': 5,
+            'pady': 2,
+            'borderwidth': 1
+        }
+        
+        # Create the Receive button
+        self.receive_button = tk.Button(
+            button_container, 
+            text="Receive", 
+            bg='#27ae60',  # Green
+            fg='white',
+            activebackground='#2ecc71',  # Lighter green
+            **button_style,
+            command=self.toggle_receive_tab
+        )
+        self.receive_button.pack(side=tk.TOP, padx=2, pady=1, fill=tk.X)
+        
+        # Create the Reverse Inbound button with emoji
+        self.browser_button = tk.Button(
+            button_container, 
+            text="↩️Inbound", 
+            bg='#4169E1',  # Royal Blue
+            fg='white',
+            activebackground='#1E90FF',  # Dodger Blue
+            **button_style,
+            command=self.toggle_browser_tab
+        )
+        self.browser_button.pack(side=tk.TOP, padx=2, pady=1, fill=tk.X)
+        
+        # Add tooltips for the buttons
+        self.CreateToolTip(self.receive_button, "Open or close JDL Scan/Receive page")
+        self.CreateToolTip(self.browser_button, "Open or close JDL After Sales Order page")
 
-        def update_last_print_time():
-            """Update the last print time display"""
-            if self.last_print_time:
-                elapsed = int((time.time() - self.last_print_time))
-                if elapsed < 60:
-                    time_text = f"Last Label Printed {elapsed}s ago"
-                    # Update every 5 seconds for the first minute
-                    self.file_window.after(5000, update_last_print_time)
-                elif elapsed < 3600:
-                    time_text = f"Last Label Printed {elapsed//60}m ago"
-                    # Update every 30 seconds after the first minute
-                    self.file_window.after(30000, update_last_print_time)
-                else:
-                    time_text = f"Last Label Printed {elapsed//3600}h ago"
-                    # Update every 30 seconds after the first minute
-                    self.file_window.after(30000, update_last_print_time)
-                last_print_label.config(text=time_text)
-                
-                # Make label clickable when there's a time
-                last_print_label.config(cursor="hand2")
-                last_print_label.bind('<Button-1>', lambda e: self.insert_last_upc())
-            else:
-                last_print_label.config(text="")
-                last_print_label.config(cursor="")
-                last_print_label.unbind('<Button-1>')
-                # Keep checking every 30 seconds even when no print time
-                self.file_window.after(30000, update_last_print_time)
+    def toggle_browser_tab(self):
+        """Open or close a browser tab for the JDL After Sales Order page"""
+        import webbrowser
+        import subprocess
+        import os
+        import time
+        
+        # Initialize state if needed
+        if not hasattr(self, 'reverse_tab_open'):
+            self.reverse_tab_open = False
+        
+        if not self.reverse_tab_open:
+            # Open the tab using URL from settings
+            jdl_url = self.config_manager.settings.jdl_reverse_inbound_url
+            webbrowser.open(jdl_url, new=2)
             
-        def insert_last_upc():
-            """Insert the last printed UPC into search field and select first result"""
-            if self.last_printed_upc:
-                search_var.set("")  # Clear first
-                search_entry.focus_set()
-                search_var.set(self.last_printed_upc)
-                search_entry.select_range(0, tk.END)
+            # Update button state
+            self.browser_button.config(
+                text="Close Reverse",
+                bg='#e74c3c',  # Red
+                activebackground='#c0392b'  # Darker red
+            )
+            self.reverse_tab_open = True
+        else:
+            # Only close the tab if auto_close_browser_tabs is enabled
+            if self.config_manager.settings.auto_close_browser_tabs:
+                # Use a more robust approach to close the tab
+                try:
+                    # Create a temporary PowerShell script to close the active tab
+                    temp_dir = os.path.join(os.environ['TEMP'], 'label_maker')
+                    os.makedirs(temp_dir, exist_ok=True)
+                    ps_script_path = os.path.join(temp_dir, 'close_tab.ps1')
+                    
+                    # Write a PowerShell script that sends Alt+Tab and then Ctrl+W
+                    with open(ps_script_path, 'w') as f:
+                        f.write("""
+                        Add-Type -AssemblyName System.Windows.Forms
+                        
+                        # Alt+Tab to switch to the browser window
+                        [System.Windows.Forms.SendKeys]::SendWait("%{TAB}")
+                        Start-Sleep -Milliseconds 300
+                        
+                        # Send Ctrl+W to close the tab
+                        [System.Windows.Forms.SendKeys]::SendWait("^w")
+                        """)
+                    
+                    # Execute the PowerShell script
+                    subprocess.run(['powershell', '-ExecutionPolicy', 'Bypass', '-File', ps_script_path], 
+                                  capture_output=True,
+                                  creationflags=subprocess.CREATE_NO_WINDOW)
+                    
+                    # Give time for the tab to close
+                    time.sleep(0.5)
+                except Exception as e:
+                    print(f"Error closing tab: {str(e)}")
+            
+            # Update button state
+            self.browser_button.config(
+                text="↩️Inbound",
+                bg='#4169E1',  # Royal Blue
+                activebackground='#1E90FF'  # Dodger Blue
+            )
+            self.reverse_tab_open = False
+            
+    def toggle_receive_tab(self):
+        """Open or close a browser tab for the JDL Scan/Receive page"""
+        import webbrowser
+        import subprocess
+        import os
+        import time
+        
+        # Initialize state if needed
+        if not hasattr(self, 'receive_tab_open'):
+            self.receive_tab_open = False
+        
+        if not self.receive_tab_open:
+            # Open the tab using URL from settings
+            jdl_url = self.config_manager.settings.jdl_receive_url
+            webbrowser.open(jdl_url, new=2)
+            
+            # Update button state
+            self.receive_button.config(
+                text="Close Receive",
+                bg='#e74c3c',  # Red
+                activebackground='#c0392b'  # Darker red
+            )
+            self.receive_tab_open = True
+        else:
+            # Only close the tab if auto_close_browser_tabs is enabled
+            if self.config_manager.settings.auto_close_browser_tabs:
+                # Use a more robust approach to close the tab
+                try:
+                    # Create a temporary PowerShell script to close the active tab
+                    temp_dir = os.path.join(os.environ['TEMP'], 'label_maker')
+                    os.makedirs(temp_dir, exist_ok=True)
+                    ps_script_path = os.path.join(temp_dir, 'close_tab.ps1')
+                    
+                    # Write a PowerShell script that sends Alt+Tab and then Ctrl+W
+                    with open(ps_script_path, 'w') as f:
+                        f.write("""
+                        Add-Type -AssemblyName System.Windows.Forms
+                        
+                        # Alt+Tab to switch to the browser window
+                        [System.Windows.Forms.SendKeys]::SendWait("%{TAB}")
+                        Start-Sleep -Milliseconds 300
+                        
+                        # Send Ctrl+W to close the tab
+                        [System.Windows.Forms.SendKeys]::SendWait("^w")
+                        """)
+                    
+                    # Execute the PowerShell script
+                    subprocess.run(['powershell', '-ExecutionPolicy', 'Bypass', '-File', ps_script_path], 
+                                  capture_output=True,
+                                  creationflags=subprocess.CREATE_NO_WINDOW)
+                    
+                    # Give time for the tab to close
+                    time.sleep(0.5)
+                except Exception as e:
+                    print(f"Error closing tab: {str(e)}")
+            
+            # Update button state
+            self.receive_button.config(
+                text="Receive",
+                bg='#27ae60',  # Green
+                activebackground='#2ecc71'  # Lighter green
+            )
+            self.receive_tab_open = False
+            
+    def create_diagnostic_window(self):
+        """Create a diagnostic window to track browser tab operations"""
+        import platform
+        
+        # Create the diagnostic window
+        self.diagnostic_window = tk.Toplevel(self)
+        self.diagnostic_window.title("Browser Tab Diagnostics")
+        self.diagnostic_window.geometry("800x500")
+        self.diagnostic_window.minsize(600, 400)
+        
+        # Make sure it stays on top
+        self.diagnostic_window.attributes('-topmost', True)
+        
+        # Create a frame for the text widget and scrollbar
+        text_frame = tk.Frame(self.diagnostic_window)
+        text_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Create a text widget to display diagnostic information
+        self.diagnostic_text = tk.Text(text_frame, wrap=tk.WORD, font=('Consolas', 10))
+        self.diagnostic_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Add a scrollbar
+        scrollbar = tk.Scrollbar(text_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.diagnostic_text.config(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=self.diagnostic_text.yview)
+        
+        # Create a frame for buttons
+        button_frame = tk.Frame(self.diagnostic_window)
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=5)
+        
+        # Add a clear button
+        clear_button = tk.Button(button_frame, text="Clear Log", command=self.clear_diagnostic_log)
+        clear_button.pack(side=tk.LEFT, padx=5)
+        
+        # Add a test button to manually trigger Ctrl+W
+        test_button = tk.Button(button_frame, text="Test Ctrl+W", command=lambda: pyautogui.hotkey('ctrl', 'w'))
+        test_button.pack(side=tk.LEFT, padx=5)
+        
+        # Log initial information
+        self.log_diagnostic("=== DIAGNOSTIC WINDOW CREATED ===")
+        self.log_diagnostic(f"Python version: {sys.version}")
+        self.log_diagnostic(f"Operating system: {platform.system()} {platform.release()}")
+        self.log_diagnostic(f"Default browser detected: {self._detect_default_browser()}")
+        self.log_diagnostic("Ready to monitor browser tab operations")
+        self.log_diagnostic("=== INSTRUCTIONS ===")
+        self.log_diagnostic("1. Click ↩️Inbound or Receive to open a tab")
+        self.log_diagnostic("2. Click 'Close Reverse' or 'Close Receive' to attempt to close the tab")
+        self.log_diagnostic("3. Watch this window for diagnostic information")
+        self.log_diagnostic("============================")
+        
+    def log_diagnostic(self, message):
+        """Log a diagnostic message with timestamp"""
+        # Check if automation activity logging is enabled
+        if hasattr(self.config_manager.settings, 'automation_activity_log_enabled') and not self.config_manager.settings.automation_activity_log_enabled:
+            # If logging is disabled, only log critical system messages
+            if message.startswith("===") or "Error" in message:
+                pass  # Still log critical messages and errors
+            else:
+                return  # Skip non-critical messages when logging is disabled
+        
+        # Log the message if diagnostic text widget exists
+        if hasattr(self, 'diagnostic_text'):
+            timestamp = time.strftime("%H:%M:%S", time.localtime())
+            self.diagnostic_text.insert(tk.END, f"[{timestamp}] {message}\n")
+            self.diagnostic_text.see(tk.END)  # Scroll to the end
+            
+    def clear_diagnostic_log(self):
+        """Clear the diagnostic log"""
+        if hasattr(self, 'diagnostic_text'):
+            self.diagnostic_text.delete(1.0, tk.END)
+            self.log_diagnostic("Log cleared")
+            
+    def close_tab_with_diagnostics(self, tab_type):
+        """Close a browser tab with detailed diagnostics"""
+        import webbrowser
+        import subprocess
+        import platform
+        import time
+        import sys
+        import win32gui
+        import win32con
+        import win32process
+        import psutil
+        
+        self.log_diagnostic(f"Starting tab close operation for {tab_type}")
+        
+        # Try multiple approaches and log results
+        try:
+            # 1. First, try to find the browser window
+            self.log_diagnostic("Searching for browser window...")
+            
+            # Define browser window titles to look for
+            browser_titles = {
+                "chrome": "Google Chrome",
+                "msedge": "Microsoft Edge",
+                "firefox": "Mozilla Firefox"
+            }
+            
+            # Function to find browser windows
+            def find_browser_windows():
+                browser_windows = []
                 
-                # Wait briefly for the listbox to update, then select first item
-                def select_first():
-                    if self.listbox.size() > 0:
-                        self.listbox.selection_clear(0, tk.END)
-                        self.listbox.selection_set(0)
-                        self.listbox.see(0)
-                        # Trigger the preview update
-                        show_preview(None)
+                def enum_callback(hwnd, results):
+                    if win32gui.IsWindowVisible(hwnd):
+                        window_text = win32gui.GetWindowText(hwnd)
+                        # Look for browser windows with our JDL URLs
+                        for browser in browser_titles:
+                            if browser_titles[browser] in window_text:
+                                if "jdlglobal" in window_text.lower() or "iwms" in window_text.lower():
+                                    # Get process info
+                                    try:
+                                        _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                                        process = psutil.Process(pid)
+                                        process_name = process.name()
+                                        results.append((hwnd, window_text, process_name, pid))
+                                    except Exception as e:
+                                        results.append((hwnd, window_text, "Unknown", 0))
+                    return True
                 
-                # Give time for the search to update the list
-                self.file_window.after(100, select_first)
-
-        # Start the time update loop
-        update_last_print_time()
-
+                win32gui.EnumWindows(enum_callback, browser_windows)
+                return browser_windows
+            
+            # Find browser windows
+            browser_windows = find_browser_windows()
+            
+            if browser_windows:
+                for hwnd, title, process_name, pid in browser_windows:
+                    self.log_diagnostic(f"Found browser window: '{title}' (Process: {process_name}, PID: {pid})")
+                
+                # Try to focus and send Ctrl+W to the first window
+                hwnd, title, _, _ = browser_windows[0]
+                self.log_diagnostic(f"Focusing window: '{title}'")
+                
+                # Restore window if minimized
+                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                
+                # Set foreground window
+                win32gui.SetForegroundWindow(hwnd)
+                
+                # Give time for window to get focus
+                time.sleep(0.5)
+                
+                # Send Ctrl+W
+                self.log_diagnostic("Sending Ctrl+W keystroke")
+                pyautogui.hotkey('ctrl', 'w')
+                
+                # Check if window still exists after a short delay
+                time.sleep(1)
+                try:
+                    new_title = win32gui.GetWindowText(hwnd)
+                    self.log_diagnostic(f"After Ctrl+W, window title is now: '{new_title}'")
+                except Exception as e:
+                    self.log_diagnostic(f"Window no longer exists after Ctrl+W: {str(e)}")
+            else:
+                self.log_diagnostic("No matching browser windows found")
+                
+                # Try direct approach with pyautogui
+                self.log_diagnostic("Trying direct Ctrl+W approach")
+                pyautogui.hotkey('ctrl', 'w')
+        except Exception as e:
+            self.log_diagnostic(f"Error during tab close operation: {str(e)}")
+            import traceback
+            self.log_diagnostic(traceback.format_exc())
+    
+    def open_browser_tab(self, tab_type):
+        """Open a browser tab with the specified JDL page
+        
+        Args:
+            tab_type: Either 'reverse' for After Sales Order or 'receive' for Scan/Receive
+        """
+        import webbrowser
+        
+        try:
+            # Set URL based on tab type
+            if tab_type == 'reverse':
+                jdl_url = "https://iwms.us.jdlglobal.com/#/createAfterSalesOrder"
+                button = self.browser_button
+            else:  # receive
+                jdl_url = "https://iwms.us.jdlglobal.com/#/scan"
+                button = self.receive_button
+            
+            # Simply open the URL - no state tracking or complex logic
+            webbrowser.open(jdl_url, new=2)  # Open in a new tab
+            
+            # Update status indicator
+            self.browser_status_indicator.config(bg='#27ae60')  # Green
+        except Exception as e:
+            print(f"Error opening browser: {str(e)}")
+            # Don't show error message to avoid interrupting workflow
+    
+    def close_browser_tab(self, tab_type):
+        """Close the browser tab using a direct approach without keyboard shortcuts
+        
+        Args:
+            tab_type: Either 'reverse' for After Sales Order or 'receive' for Scan/Receive
+        """
+        import webbrowser
+        import time
+        
+        try:
+            # Set indicator to yellow during closing
+            self.browser_status_indicator.config(bg='#f39c12')  # Yellow/orange
+            
+            # Set button and state based on tab type
+            if tab_type == 'reverse':
+                button = self.browser_button
+                button_text = "↩️Inbound"
+                button_color = '#4169E1'  # Royal Blue
+                button_active_color = '#1E90FF'  # Dodger Blue
+                # Reset tab state
+                self.reverse_tab_open = False
+            else:  # receive
+                button = self.receive_button
+                button_text = "Receive"
+                button_color = '#27ae60'  # Green
+                button_active_color = '#2ecc71'  # Lighter green
+                # Reset tab state
+                self.receive_tab_open = False
+            
+            # Use a more robust approach to close browser tabs
+            try:
+                # Import necessary modules
+                import subprocess
+                import win32gui
+                import win32con
+                
+                # Get the browser name
+                browser_name = self.browser_used
+                
+                # Define browser window titles to look for
+                browser_titles = {
+                    "chrome": "Google Chrome",
+                    "msedge": "Microsoft Edge",
+                    "firefox": "Mozilla Firefox"
+                }
+                
+                # Function to find and focus browser window
+                def find_browser_window():
+                    def enum_windows_callback(hwnd, results):
+                        if win32gui.IsWindowVisible(hwnd):
+                            window_text = win32gui.GetWindowText(hwnd)
+                            # Look for browser windows that might have our JDL page open
+                            if browser_name in browser_titles and browser_titles[browser_name] in window_text:
+                                if "jdlglobal" in window_text.lower() or "iwms" in window_text.lower():
+                                    results.append(hwnd)
+                        return True
+                    
+                    windows = []
+                    win32gui.EnumWindows(enum_windows_callback, windows)
+                    return windows
+                
+                # Find and focus the browser window
+                browser_windows = find_browser_window()
+                
+                if browser_windows:
+                    # Focus the first matching window
+                    hwnd = browser_windows[0]
+                    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                    win32gui.SetForegroundWindow(hwnd)
+                    
+                    # Give a short delay to ensure the browser is focused
+                    time.sleep(0.5)
+                    
+                    # Use Ctrl+W to close the current tab
+                    pyautogui.hotkey('ctrl', 'w')
+                else:
+                    # If we can't find the browser window, try the direct approach
+                    time.sleep(0.5)
+                    pyautogui.hotkey('ctrl', 'w')
+            except Exception as e:
+                # If there's any error with the browser automation,
+                # just log it and continue - the tab has already been replaced
+                # with a blank page, which is good enough
+                print(f"Browser automation note: {str(e)}")
+                # No need to show an error to the user
+            
+            # Update button and status
+            button.config(
+                text=button_text,
+                bg=button_color,
+                activebackground=button_active_color
+            )
+            # Reset status indicator to default gray
+            self.browser_status_indicator.config(bg='#f0f0f0')
+        except Exception as e:
+            messagebox.showerror("Error", f"Error closing browser tab: {str(e)}")
+    
+    def toggle_view_files_tab(self, tab_type):
+        """Open or close a browser tab for the View Files dialog
+        
+        Args:
+            tab_type: Either 'reverse' for After Sales Order or 'receive' for Scan/Receive
+        """
+        import webbrowser
+        import subprocess
+        import os
+        import time
+        
+        # Initialize state variables if needed
+        if not hasattr(self, 'view_files_reverse_tab_open'):
+            self.view_files_reverse_tab_open = False
+        if not hasattr(self, 'view_files_receive_tab_open'):
+            self.view_files_receive_tab_open = False
+            
+        if tab_type == 'reverse':
+            if not self.view_files_reverse_tab_open:
+                # Open the tab using URL from settings
+                jdl_url = self.config_manager.settings.jdl_reverse_inbound_url
+                webbrowser.open(jdl_url, new=2)
+                
+                # Update button state
+                self.view_files_reverse_button.config(
+                    text="Close Reverse",
+                    bg='#e74c3c',  # Red
+                    activebackground='#c0392b'  # Darker red
+                )
+                self.view_files_reverse_tab_open = True
+            else:
+                # Use a more robust approach to close the tab
+                try:
+                    # Create a temporary PowerShell script to close the active tab
+                    temp_dir = os.path.join(os.environ['TEMP'], 'label_maker')
+                    os.makedirs(temp_dir, exist_ok=True)
+                    ps_script_path = os.path.join(temp_dir, 'close_tab.ps1')
+                    
+                    # Write a PowerShell script that sends Alt+Tab and then Ctrl+W
+                    with open(ps_script_path, 'w') as f:
+                        f.write("""
+                        Add-Type -AssemblyName System.Windows.Forms
+                        
+                        # Alt+Tab to switch to the browser window
+                        [System.Windows.Forms.SendKeys]::SendWait("%{TAB}")
+                        Start-Sleep -Milliseconds 300
+                        
+                        # Send Ctrl+W to close the tab
+                        [System.Windows.Forms.SendKeys]::SendWait("^w")
+                        """)
+                    
+                    # Execute the PowerShell script
+                    subprocess.run(['powershell', '-ExecutionPolicy', 'Bypass', '-File', ps_script_path], 
+                                  capture_output=True,
+                                  creationflags=subprocess.CREATE_NO_WINDOW)
+                    
+                    # Give time for the tab to close
+                    time.sleep(0.5)
+                except Exception as e:
+                    print(f"Error closing tab: {str(e)}")
+                
+                # Update button state
+                self.view_files_reverse_button.config(
+                    text="↩️Inbound",
+                    bg='#4169E1',  # Royal Blue
+                    activebackground='#1E90FF'  # Dodger Blue
+                )
+                self.view_files_reverse_tab_open = False
+        else:  # receive
+            if not self.view_files_receive_tab_open:
+                # Open the tab using URL from settings
+                jdl_url = self.config_manager.settings.jdl_receive_url
+                webbrowser.open(jdl_url, new=2)
+                
+                # Update button state
+                self.view_files_receive_button.config(
+                    text="Close Receive",
+                    bg='#e74c3c',  # Red
+                    activebackground='#c0392b'  # Darker red
+                )
+                self.view_files_receive_tab_open = True
+            else:
+                # Use a more robust approach to close the tab
+                try:
+                    # Create a temporary PowerShell script to close the active tab
+                    temp_dir = os.path.join(os.environ['TEMP'], 'label_maker')
+                    os.makedirs(temp_dir, exist_ok=True)
+                    ps_script_path = os.path.join(temp_dir, 'close_tab.ps1')
+                    
+                    # Write a PowerShell script that sends Alt+Tab and then Ctrl+W
+                    with open(ps_script_path, 'w') as f:
+                        f.write("""
+                        Add-Type -AssemblyName System.Windows.Forms
+                        
+                        # Alt+Tab to switch to the browser window
+                        [System.Windows.Forms.SendKeys]::SendWait("%{TAB}")
+                        Start-Sleep -Milliseconds 300
+                        
+                        # Send Ctrl+W to close the tab
+                        [System.Windows.Forms.SendKeys]::SendWait("^w")
+                        """)
+                    
+                    # Execute the PowerShell script
+                    subprocess.run(['powershell', '-ExecutionPolicy', 'Bypass', '-File', ps_script_path], 
+                                  capture_output=True,
+                                  creationflags=subprocess.CREATE_NO_WINDOW)
+                    
+                    # Give time for the tab to close
+                    time.sleep(0.5)
+                except Exception as e:
+                    print(f"Error closing tab: {str(e)}")
+                
+                # Update button state
+                self.view_files_receive_button.config(
+                    text="Receive",
+                    bg='#27ae60',  # Green
+                    activebackground='#2ecc71'  # Lighter green
+                )
+                self.view_files_receive_tab_open = False
+    
+    def open_view_files_tab(self, tab_type):
+        """Open a browser tab with the specified JDL page for the View Files dialog
+        
+        Args:
+            tab_type: Either 'reverse' for After Sales Order or 'receive' for Scan/Receive
+        """
+        import webbrowser
+        
+        # Set URL based on tab type and open it directly
+        if tab_type == 'reverse':
+            jdl_url = "https://iwms.us.jdlglobal.com/#/createAfterSalesOrder"
+        else:  # receive
+            jdl_url = "https://iwms.us.jdlglobal.com/#/scan"
+        
+        # Simply open the URL in a new tab
+        webbrowser.open(jdl_url, new=2)
+    
+    def close_view_files_tab(self, tab_type):
+        """Close the browser tab for the View Files dialog using a direct approach without keyboard shortcuts
+        
+        Args:
+            tab_type: Either 'reverse' for After Sales Order or 'receive' for Scan/Receive
+        """
+        import webbrowser
+        import time
+        
+        try:
+            # Set indicator to yellow during closing
+            self.view_files_status_indicator.config(bg='#f39c12')  # Yellow/orange
+            
+            # Set button and state based on tab type
+            if tab_type == 'reverse':
+                button = self.view_files_reverse_button
+                button_text = "↩️Inbound"
+                button_color = '#4169E1'  # Royal Blue
+                button_active_color = '#1E90FF'  # Dodger Blue
+                # Reset tab state
+                self.view_files_reverse_tab_open = False
+            else:  # receive
+                button = self.view_files_receive_button
+                button_text = "Receive"
+                button_color = '#27ae60'  # Green
+                button_active_color = '#2ecc71'  # Lighter green
+                # Reset tab state
+                self.view_files_receive_tab_open = False
+            
+            # Use a more robust approach to close browser tabs
+            try:
+                # Import necessary modules
+                import subprocess
+                import win32gui
+                import win32con
+                
+                # Get the browser name
+                browser_name = self.browser_used
+                
+                # Define browser window titles to look for
+                browser_titles = {
+                    "chrome": "Google Chrome",
+                    "msedge": "Microsoft Edge",
+                    "firefox": "Mozilla Firefox"
+                }
+                
+                # Function to find and focus browser window
+                def find_browser_window():
+                    def enum_windows_callback(hwnd, results):
+                        if win32gui.IsWindowVisible(hwnd):
+                            window_text = win32gui.GetWindowText(hwnd)
+                            # Look for browser windows that might have our JDL page open
+                            if browser_name in browser_titles and browser_titles[browser_name] in window_text:
+                                if "jdlglobal" in window_text.lower() or "iwms" in window_text.lower():
+                                    results.append(hwnd)
+                        return True
+                    
+                    windows = []
+                    win32gui.EnumWindows(enum_windows_callback, windows)
+                    return windows
+                
+                # Find and focus the browser window
+                browser_windows = find_browser_window()
+                
+                if browser_windows:
+                    # Focus the first matching window
+                    hwnd = browser_windows[0]
+                    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                    win32gui.SetForegroundWindow(hwnd)
+                    
+                    # Give a short delay to ensure the browser is focused
+                    time.sleep(0.5)
+                    
+                    # Use Ctrl+W to close the current tab
+                    pyautogui.hotkey('ctrl', 'w')
+                else:
+                    # If we can't find the browser window, try the direct approach
+                    time.sleep(0.5)
+                    pyautogui.hotkey('ctrl', 'w')
+            except Exception as e:
+                # If there's any error with the browser automation,
+                # just log it and continue - the tab has already been replaced
+                # with a blank page, which is good enough
+                print(f"Browser automation note: {str(e)}")
+                # No need to show an error to the user
+            
+            # Update button and status
+            button.config(
+                text=button_text,
+                bg=button_color,
+                activebackground=button_active_color
+            )
+            # Reset status indicator to default gray
+            self.view_files_status_indicator.config(bg='#f0f0f0')
+        except Exception as e:
+            messagebox.showerror("Error", f"Error closing browser tab: {str(e)}")
+    
+    def _detect_default_browser(self):
+        """Detect the default browser on the system"""
+        import subprocess
+        import platform
+        import re
+        
+        try:
+            if platform.system() == "Windows":
+                # Try to detect the default browser using PowerShell
+                ps_command = [
+                    'powershell', '-Command',
+                    r'''
+                    $browserPath = (Get-ItemProperty HKCU:\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice).ProgId
+                    $browserName = switch -Regex ($browserPath) {
+                        "ChromeHTML|Chrome" { "chrome" }
+                        "FirefoxURL|Firefox" { "firefox" }
+                        "MSEdgeHTM|Edge" { "msedge" }
+                        "IE.HTTP|InternetExplorer" { "iexplore" }
+                        "OperaStable" { "opera" }
+                        "BraveHTML" { "brave" }
+                        default { "unknown" }
+                    }
+                    $browserName
+                    '''
+                ]
+                
+                result = subprocess.run(ps_command, capture_output=True, text=True, check=False)
+                browser_name = result.stdout.strip().lower()
+                
+                if browser_name == "unknown" or not browser_name:
+                    # Try another method - check running processes
+                    browsers = ["chrome", "firefox", "msedge", "iexplore", "opera", "brave"]
+                    for browser in browsers:
+                        check_cmd = ['powershell', '-Command', f'Get-Process -Name {browser} -ErrorAction SilentlyContinue']
+                        result = subprocess.run(check_cmd, capture_output=True, text=True, check=False)
+                        if result.stdout.strip():
+                            browser_name = browser
+                            break
+                
+                self.browser_used = browser_name if browser_name else "unknown"
+            else:
+                # For non-Windows platforms, we'll just use a generic approach
+                self.browser_used = "unknown"
+        except Exception as e:
+            # If detection fails, just set to unknown
+            self.browser_used = "unknown"
+            print(f"Error detecting browser: {str(e)}")
+    
     def _setup_fonts(self):
         """Configure default fonts"""
         self.default_font = ('TkDefaultFont', 11)
@@ -712,6 +1460,7 @@ class MainWindow(tk.Tk):
                         print(f"Failed to set taskbar icon: {str(e)}")
             except Exception as e:
                 print(f"Failed to set window icon: {str(e)}")
+
 
     def _create_main_window(self):
         """Create and setup the main application window"""
@@ -1296,35 +2045,53 @@ class MainWindow(tk.Tk):
 
     def _create_settings_content(self):
         """Create settings window content"""
+        # Create a container frame
+        container = ttk.Frame(self.settings_window)
+        container.pack(fill=tk.BOTH, expand=True)
+        
         # Create a canvas with scrollbar for scrolling
-        canvas = tk.Canvas(self.settings_window)
-        scrollbar = ttk.Scrollbar(self.settings_window, orient="vertical", command=canvas.yview)
+        canvas = tk.Canvas(container)
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
         
         # Configure the canvas
         canvas.configure(yscrollcommand=scrollbar.set)
-        canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         
         # Pack the canvas and scrollbar
-        canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
         
         # Create a frame inside the canvas for the content
-        main_frame = ttk.Frame(canvas, padding="10")
+        main_frame = ttk.Frame(canvas)
         
         # Add the frame to the canvas
         canvas_window = canvas.create_window((0, 0), window=main_frame, anchor="nw")
         
         # Make the frame expand to the width of the canvas
-        def configure_frame(event):
-            canvas.itemconfig(canvas_window, width=event.width)
+        def configure_canvas(event):
+            canvas_width = event.width
+            canvas.itemconfig(canvas_window, width=canvas_width)
         
-        canvas.bind('<Configure>', lambda event: [canvas.configure(scrollregion=canvas.bbox("all")), configure_frame(event)])
+        canvas.bind('<Configure>', configure_canvas)
+        
+        # Update the scrollregion when the size of the frame changes
+        def update_scrollregion(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        
+        main_frame.bind('<Configure>', update_scrollregion)
         
         # Enable mousewheel scrolling
         def _on_mousewheel(event):
-            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+            # Scroll 2 lines at a time for better user experience
+            canvas.yview_scroll(int(-1 * (event.delta / 60)), "units")
         
+        # Bind mousewheel to canvas and all its children
         canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        # Add keyboard scrolling
+        self.settings_window.bind("<Up>", lambda e: canvas.yview_scroll(-1, "units"))
+        self.settings_window.bind("<Down>", lambda e: canvas.yview_scroll(1, "units"))
+        self.settings_window.bind("<Prior>", lambda e: canvas.yview_scroll(-1, "pages"))
+        self.settings_window.bind("<Next>", lambda e: canvas.yview_scroll(1, "pages"))
         
         # Unbind the mousewheel event when the window is destroyed
         def _on_destroy(event):
@@ -1332,6 +2099,69 @@ class MainWindow(tk.Tk):
         
         self.settings_window.bind("<Destroy>", _on_destroy)
 
+        # JDL URL Settings - Moved to the top of the dialog
+        jdl_frame = ttk.LabelFrame(main_frame, text="JDL URL Settings", padding="5")
+        jdl_frame.pack(fill=tk.X, pady=5)
+        
+        # Reverse Inbound URL
+        ttk.Label(jdl_frame, text="Reverse Inbound URL:").grid(row=0, column=0, sticky="w", padx=5, pady=2)
+        reverse_url_var = tk.StringVar(value=self.config_manager.settings.jdl_reverse_inbound_url if hasattr(self.config_manager.settings, 'jdl_reverse_inbound_url') else "https://iwms.us.jdlglobal.com/#/createAfterSalesOrder")
+        reverse_url_entry = ttk.Entry(jdl_frame, textvariable=reverse_url_var, width=40)
+        reverse_url_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=2)
+        
+        # Receive URL
+        ttk.Label(jdl_frame, text="Receive URL:").grid(row=1, column=0, sticky="w", padx=5, pady=2)
+        receive_url_var = tk.StringVar(value=self.config_manager.settings.jdl_receive_url if hasattr(self.config_manager.settings, 'jdl_receive_url') else "https://iwms.us.jdlglobal.com/#/scan")
+        receive_url_entry = ttk.Entry(jdl_frame, textvariable=receive_url_var, width=40)
+        receive_url_entry.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
+        
+        # Reset URLs button
+        def reset_urls():
+            reverse_url_var.set("https://iwms.us.jdlglobal.com/#/createAfterSalesOrder")
+            receive_url_var.set("https://iwms.us.jdlglobal.com/#/scan")
+            messagebox.showinfo("URLs Reset", "The JDL URLs have been reset to their default values.")
+            
+        reset_urls_btn = ttk.Button(
+            jdl_frame,
+            text="Reset to Defaults",
+            command=reset_urls
+        )
+        reset_urls_btn.grid(row=2, column=1, sticky="e", padx=5, pady=5)
+        
+        # Window Settings - Moved up in the dialog
+        window_frame = ttk.LabelFrame(main_frame, text="Window Settings", padding="5")
+        window_frame.pack(fill=tk.X, pady=5)
+
+        # Always on Top checkbox
+        always_on_top_var = tk.BooleanVar(value=self.config_manager.settings.always_on_top)
+        always_on_top_cb = ttk.Checkbutton(
+            window_frame, 
+            text="Always on Top", 
+            variable=always_on_top_var
+        )
+        always_on_top_cb.grid(row=0, column=0, sticky="w", columnspan=2)
+        
+        # Auto-close browser tabs checkbox
+        auto_close_tabs_var = tk.BooleanVar(value=self.config_manager.settings.auto_close_browser_tabs if hasattr(self.config_manager.settings, 'auto_close_browser_tabs') else True)
+        auto_close_tabs_cb = ttk.Checkbutton(
+            window_frame, 
+            text="Auto-close browser tabs", 
+            variable=auto_close_tabs_var
+        )
+        auto_close_tabs_cb.grid(row=1, column=0, sticky="w", columnspan=2)
+
+        # Add transparency level control
+        ttk.Label(window_frame, text="Transparency:").grid(row=2, column=0, sticky="w")
+        transparency_var = tk.DoubleVar(value=self.config_manager.settings.transparency_level)
+        transparency_scale = ttk.Scale(
+            window_frame,
+            from_=0.1,
+            to=1.0,
+            orient="horizontal",
+            variable=transparency_var
+        )
+        transparency_scale.grid(row=2, column=1, sticky="ew", padx=5)
+        
         # Font Sizes
         font_frame = ttk.LabelFrame(main_frame, text="Font Settings", padding="5")
         font_frame.pack(fill=tk.X, pady=5)
@@ -1465,21 +2295,68 @@ class MainWindow(tk.Tk):
         )
         upload_csv_btn.pack(pady=5)
 
-        # Window Settings
-        window_frame = ttk.LabelFrame(main_frame, text="Window Settings", padding="5")
-        window_frame.pack(fill=tk.X, pady=5)
-
-        # Always on Top checkbox
-        always_on_top_var = tk.BooleanVar(value=self.config_manager.settings.always_on_top)
-        always_on_top_cb = ttk.Checkbutton(
+        # Save settings function
+        def save_settings():
+            try:
+                # Save window settings
+                self.config_manager.settings.always_on_top = always_on_top_var.get()
+                self.config_manager.settings.transparency_level = transparency_var.get()
+                self.config_manager.settings.auto_close_browser_tabs = auto_close_tabs_var.get()
+                
+                # Save JDL URLs
+                if hasattr(self.config_manager.settings, 'jdl_reverse_inbound_url'):
+                    self.config_manager.settings.jdl_reverse_inbound_url = reverse_url_var.get()
+                if hasattr(self.config_manager.settings, 'jdl_receive_url'):
+                    self.config_manager.settings.jdl_receive_url = receive_url_var.get()
+                
+                # Save font sizes
+                try:
+                    self.config_manager.settings.font_size_large = int(large_font_size.get())
+                    self.config_manager.settings.font_size_medium = int(medium_font_size.get())
+                except ValueError:
+                    raise ValueError("Font sizes must be integers")
+                
+                # Save barcode settings
+                try:
+                    self.config_manager.settings.barcode_width = int(barcode_width.get())
+                    self.config_manager.settings.barcode_height = int(barcode_height.get())
+                    self.config_manager.settings.DPI = int(dpi_entry.get())
+                    self.config_manager.settings.barcode_dpi = int(barcode_dpi_entry.get())
+                    self.config_manager.settings.barcode_module_height = float(module_height_entry.get())
+                    self.config_manager.settings.barcode_module_width = float(module_width_entry.get())
+                    self.config_manager.settings.barcode_quiet_zone = float(quiet_zone_entry.get())
+                    self.config_manager.settings.barcode_font_size = int(font_size_entry.get())
+                    self.config_manager.settings.barcode_text_distance = float(text_distance_entry.get())
+                    self.config_manager.settings.barcode_write_text = write_text_var.get()
+                    self.config_manager.settings.barcode_center_text = center_text_var.get()
+                    self.config_manager.settings.barcode_background = background_entry.get()
+                    self.config_manager.settings.barcode_foreground = foreground_entry.get()
+                except ValueError:
+                    raise ValueError("Invalid barcode settings. Please check your inputs.")
+                
+                # Save settings to file
+                self.config_manager.save_settings()
+                
+                # Close the settings window
+                self.settings_window.destroy()
+                
+                # Show success message
+                messagebox.showinfo("Settings Saved", "Your settings have been saved successfully.")
+                
+            except ValueError as e:
+                messagebox.showerror("Invalid Input", str(e))
+        
+        # Auto-close browser tabs checkbox
+        auto_close_tabs_var = tk.BooleanVar(value=self.config_manager.settings.auto_close_browser_tabs if hasattr(self.config_manager.settings, 'auto_close_browser_tabs') else True)
+        auto_close_tabs_cb = ttk.Checkbutton(
             window_frame, 
-            text="Always on Top", 
-            variable=always_on_top_var
+            text="Auto-close browser tabs", 
+            variable=auto_close_tabs_var
         )
-        always_on_top_cb.grid(row=0, column=0, sticky="w", columnspan=2)
+        auto_close_tabs_cb.grid(row=1, column=0, sticky="w", columnspan=2)
 
         # Add transparency level control
-        ttk.Label(window_frame, text="Transparency:").grid(row=1, column=0, sticky="w")
+        ttk.Label(window_frame, text="Transparency:").grid(row=2, column=0, sticky="w")
         transparency_var = tk.DoubleVar(value=self.config_manager.settings.transparency_level)
         transparency_scale = ttk.Scale(
             window_frame,
@@ -1488,7 +2365,9 @@ class MainWindow(tk.Tk):
             orient="horizontal",
             variable=transparency_var
         )
-        transparency_scale.grid(row=1, column=1, sticky="ew", padx=5)
+        transparency_scale.grid(row=2, column=1, sticky="ew", padx=5)
+        
+        # This section has been moved to the top of the dialog
 
         # Add callback for real-time transparency updates
         def update_transparency(*args):
@@ -1555,6 +2434,13 @@ class MainWindow(tk.Tk):
                 self.config_manager.settings.barcode_center_text = center_text_var.get()
                 self.config_manager.settings.barcode_background = new_background
                 self.config_manager.settings.barcode_foreground = new_foreground
+                
+                # Save auto-close browser tabs setting
+                self.config_manager.settings.auto_close_browser_tabs = auto_close_tabs_var.get()
+                
+                # Save JDL URL settings
+                self.config_manager.settings.jdl_reverse_inbound_url = reverse_url_var.get()
+                self.config_manager.settings.jdl_receive_url = receive_url_var.get()
 
                 self.config_manager.save_settings()
                 self.settings_window.destroy()

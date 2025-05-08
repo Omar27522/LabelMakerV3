@@ -36,8 +36,8 @@ class LabelsSettingsDialog(tk.Toplevel):
         self.callback = callback
         
         # Configure dialog
-        self.title("Label Settings")
-        self.geometry("400x300")
+        self.title("Application Settings")
+        self.geometry("450x450")
         self.resizable(False, False)
         self.transient(parent)
         self.grab_set()
@@ -59,9 +59,11 @@ class LabelsSettingsDialog(tk.Toplevel):
         
         # Status variable
         self.status_var = tk.StringVar(value="Ready")
+        self.jdl_log_status_var = tk.StringVar()
         
         # Create UI
         self._create_ui()
+        self._update_jdl_log_status_display()
         
         # Make dialog modal
         self.focus_set()
@@ -95,9 +97,31 @@ class LabelsSettingsDialog(tk.Toplevel):
         )
         import_button.pack(fill='x', pady=5)
         
+        # Separator for database settings
+        ttk.Separator(main_frame, orient='horizontal').pack(fill='x', pady=(15, 10))
 
+        # --- JDL Automation Settings --- 
+        jdl_settings_frame = ttk.LabelFrame(main_frame, text="JDL Automation Settings", padding=(10, 5))
+        jdl_settings_frame.pack(fill='x', pady=10)
+
+        jdl_log_control_frame = ttk.Frame(jdl_settings_frame)
+        jdl_log_control_frame.pack(fill='x', pady=5)
+
+        jdl_log_label = ttk.Label(jdl_log_control_frame, text="JDL Activity Log:")
+        jdl_log_label.pack(side='left', padx=(0, 5))
+
+        self.jdl_log_status_label = ttk.Label(jdl_log_control_frame, textvariable=self.jdl_log_status_var)
+        self.jdl_log_status_label.pack(side='left', padx=(0, 10))
+
+        jdl_log_disable_button = ttk.Button(
+            jdl_log_control_frame,
+            text="🔒",
+            command=self._toggle_jdl_log_disable,
+            width=3
+        )
+        jdl_log_disable_button.pack(side='left')
         
-        # Separator
+        # Main Separator
         ttk.Separator(main_frame).pack(fill='x', pady=15)
         
         # Close button
@@ -168,7 +192,36 @@ class LabelsSettingsDialog(tk.Toplevel):
         """Handle error during CSV import"""
         messagebox.showerror("Import Error", f"Error importing data: {error_msg}")
         self.status_var.set("Ready")
-    
+
+    def _update_jdl_log_status_display(self):
+        """Updates the display text for JDL log status."""
+        current_mode = getattr(self.config_manager.settings, 'jdl_visual_logger_mode', 'show')
+        if current_mode.lower() == 'disabled':
+            self.jdl_log_status_var.set("Disabled")
+        else:
+            self.jdl_log_status_var.set("Enabled")
+
+    def _toggle_jdl_log_disable(self):
+        """Toggles the JDL visual logger mode between 'disabled' and 'show'."""
+        current_mode = getattr(self.config_manager.settings, 'jdl_visual_logger_mode', 'show')
+        
+        if current_mode.lower() == 'disabled':
+            new_mode = 'show'
+            self.config_manager.settings.jdl_visual_logger_mode = new_mode
+            message_detail = "JDL Activity Log has been enabled."
+        else:
+            new_mode = 'disabled'
+            self.config_manager.settings.jdl_visual_logger_mode = new_mode
+            message_detail = "JDL Activity Log has been disabled."
+        
+        try:
+            self.config_manager.save_settings()
+            self._update_jdl_log_status_display()
+            messagebox.showinfo("Settings Updated", message_detail, parent=self)
+            self.status_var.set("JDL Log settings saved.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save JDL Log settings: {e}", parent=self)
+            self.status_var.set("Error saving JDL Log settings.")
 
 
 def create_labels_settings_dialog(parent, config_manager, callback=None):

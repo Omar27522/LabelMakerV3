@@ -22,8 +22,8 @@ from src.utils.ui_components import create_title_section, create_colored_button,
 from src.utils.barcode_operations import process_barcode
 from src.utils.sheets_operations import write_to_google_sheet
 from src.utils.file_utils import get_central_log_file_path, ensure_directory_exists, directory_exists, file_exists, find_files_by_sku
-from src.utils.log_manager import log_shipping_event
 from src.utils.text_context_menu import add_context_menu
+from src.utils.jdl_automation import JDLAutomation
 from src.ui.window_transparency import TransparencyManager, create_transparency_toggle_button
 from src.ui.returns_data_dialog import ReturnsDataDialog
 
@@ -141,9 +141,6 @@ class CreateLabelFrame(tk.Frame):
         pin_frame = tk.Frame(return_frame, bg='white')
         pin_frame.pack(side='right')
         
-        #pin_label = tk.Label(pin_frame, text="Pin:", bg='white', font=('TkDefaultFont', 10))
-        #pin_label.pack(side=tk.LEFT, padx=(0, 5))
-        
         # Set initial button state based on saved setting
         initial_pin_color = '#FFD700' if self.stay_on_top_var.get() else '#D3D3D3'  # Gold if on, Light Gray if off
         initial_pin_relief = 'sunken' if self.stay_on_top_var.get() else 'raised'
@@ -199,6 +196,21 @@ class CreateLabelFrame(tk.Frame):
         
         self.field_widgets = create_form_field_group(form_frame, fields)
         
+        # Create a frame for the tracking number row to hold the close tab button
+        tracking_frame = self.field_widgets["Tracking Number:"]["frame"]
+        
+        # Create the Close Tab button (initially hidden)
+        self.close_tab_button = create_colored_button(
+            tracking_frame,
+            text="Close Tab",
+            color="#FF5722",  # Orange
+            hover_color="#D84315",  # Darker orange
+            command=self._close_browser_tab
+        )
+        # Place it after the tracking number field
+        self.close_tab_button.pack(side=tk.RIGHT, padx=(5, 0))
+        self.close_tab_button.pack_forget()  # Initially hidden
+        
         # Store references to the variables
         self.tracking_var = self.field_widgets["Tracking Number:"]["var"]
         self.sku_var = self.field_widgets["SKU:"]["var"]
@@ -237,12 +249,23 @@ class CreateLabelFrame(tk.Frame):
                 self.clipboard_clear()
                 self.clipboard_append(tracking_number)
                 
-                # Enable and move focus to SKU field
-                self.field_widgets["SKU:"]["widget"].config(state="normal")
-                self.field_widgets["SKU:"]["widget"].focus_set()
-                
-                # Clear any previous error messages
-                self._update_status("", 'black')
+                # Process the tracking number with JDL automation if enabled
+                if hasattr(self.config_manager.settings, 'jdl_automation_enabled') and self.config_manager.settings.jdl_automation_enabled:
+                    self._process_tracking_with_jdl(tracking_number)
+                    
+                    # Show the Close Tab button
+                    self.close_tab_button.pack(side=tk.RIGHT, padx=(5, 0))
+                    
+                    # Keep the SKU field disabled until the Close Tab button is clicked
+                    self._update_status("Click 'Close Tab' button to continue", 'blue')
+                else:
+                    # If JDL automation is not enabled, enable the SKU field immediately
+                    self.field_widgets["SKU:"]["widget"].config(state="normal")
+                    self.field_widgets["SKU:"]["widget"].focus_set()
+                    
+                # Clear any previous error messages if not using JDL
+                if not (hasattr(self.config_manager.settings, 'jdl_automation_enabled') and self.config_manager.settings.jdl_automation_enabled):
+                    self._update_status("", 'black')
             
             return "break"  # Prevent default Enter behavior
         
@@ -546,15 +569,6 @@ class CreateLabelFrame(tk.Frame):
         
         # If print is disabled, just log the information without printing
         if not print_enabled:
-            # Log the shipping record using the new logging system
-            log_shipping_event(
-                tracking_number=tracking_number,
-                sku=sku,
-                action="log_only",
-                status="success",
-                details="No print - logging only"
-            )
-            
             # Also add to the original shipping_records database to ensure records appear in the Records tab
             from src.utils.database_operations import add_shipping_record
             add_shipping_record(tracking_number, sku, "No print - logging only")
@@ -587,15 +601,6 @@ class CreateLabelFrame(tk.Frame):
         try:
             # Define a function to run after successful printing
             def after_print_success():
-                # Log the shipping record using the new logging system ONLY after successful printing
-                log_shipping_event(
-                    tracking_number=tracking_number,
-                    sku=sku,
-                    action="print",
-                    status="success",
-                    details="Label printed successfully"
-                )
-                
                 # Also add to the original shipping_records database to ensure records appear in the Records tab
                 from src.utils.database_operations import add_shipping_record
                 add_shipping_record(tracking_number, sku, "Label printed successfully")
@@ -977,3 +982,147 @@ class CreateLabelFrame(tk.Frame):
             error_msg = str(e)
             self._update_status(f"Error filling UPC field: {error_msg}", 'red')
             # Don't show an error dialog here as it's not critical
+            
+    def _process_tracking_with_jdl(self, tracking_number):
+        """
+        Process the tracking number with JDL Global IWMS automation
+        
+        Args:
+            tracking_number: The tracking number to process
+        """
+        try:
+            # Update status
+            self._update_status(f"Processing tracking number with JDL automation: {tracking_number}", 'blue')
+            
+            # Check if we need to process in reverse order based on the setting
+            reverse_order = False
+            if hasattr(self.config_manager.settings, 'reverseinbound_creation'):
+                reverse_order = self.config_manager.settings.reverseinbound_creation
+            
+            # Create a list with just this tracking number
+            # In a real implementation, you might want to batch these
+            tracking_numbers = [tracking_number]
+            
+            # If reverse order is enabled, reverse the list
+            if reverse_order:
+                tracking_numbers = list(reversed(tracking_numbers))
+                self._update_status("Using reverse order for JDL processing", 'blue')
+            
+            # Get JDL credentials from settings or ask user
+            username = ""
+            password = ""
+            
+            if hasattr(self.config_manager.settings, 'jdl_username') and hasattr(self.config_manager.settings, 'jdl_password'):
+                username = self.config_manager.settings.jdl_username
+                password = self.config_manager.settings.jdl_password
+            
+            if not username or not password:
+                # In a real implementation, you would prompt for credentials
+                # For now, just log a message
+                self._update_status("JDL credentials not found in settings", 'orange')
+                return
+            
+            # Get the singleton instance of JDL automation
+            # This ensures we maintain the same browser session throughout the day
+            jdl = JDLAutomation.get_instance(self.config_manager)
+            
+            # Process in a separate thread to avoid blocking the UI
+            import threading
+            thread = threading.Thread(
+                target=self._jdl_automation_thread,
+                args=(jdl, tracking_numbers, username, password),
+                daemon=True
+            )
+            thread.start()
+            
+        except Exception as e:
+            error_msg = str(e)
+            self._update_status(f"Error in JDL automation: {error_msg}", 'red')
+            logging.error(f"JDL automation error: {error_msg}")
+    
+    def _close_browser_tab(self):
+        """
+        Close the browser tab and enable the SKU field.
+        This method is called when the user clicks the 'Close Tab' button.
+        """
+        try:
+            # Get the JDL automation instance
+            jdl = JDLAutomation.get_instance(self.config_manager)
+            
+            # Close the tab
+            jdl.close()
+            
+            # Enable the SKU field
+            self.field_widgets["SKU:"]["widget"].config(state="normal")
+            self.field_widgets["SKU:"]["widget"].focus_set()
+            
+            # Hide the Close Tab button
+            self.close_tab_button.pack_forget()
+            
+            # Update status
+            self._update_status("Browser tab closed. Continue with SKU entry.", 'green')
+            
+        except Exception as e:
+            error_msg = str(e)
+            self._update_status(f"Error closing browser tab: {error_msg}", 'red')
+            logging.error(f"Error closing browser tab: {error_msg}")
+            
+            # Still enable the SKU field in case of error
+            self.field_widgets["SKU:"]["widget"].config(state="normal")
+            self.field_widgets["SKU:"]["widget"].focus_set()
+            
+            # Hide the Close Tab button
+            self.close_tab_button.pack_forget()
+    
+    def _jdl_automation_thread(self, jdl, tracking_numbers, username, password):
+        """
+        Thread function for JDL automation to avoid blocking the UI
+        
+        Args:
+            jdl: JDLAutomation instance
+            tracking_numbers: List of tracking numbers to process
+            username: JDL username
+            password: JDL password
+        """
+        try:
+            # Import the visual logger here to ensure it's available
+            try:
+                from src.utils.jdl_automation import visual_logger
+                # Do NOT show the visual logger, just log in the background
+                self.after(0, lambda: visual_logger.log("Starting JDL automation process", "INFO"))
+            except ImportError as e:
+                logging.error(f"Could not import visual logger: {str(e)}")
+            
+            # Update status
+            self.after(0, lambda: self._update_status("Starting JDL automation process...", 'blue'))
+            
+            # Process tracking numbers using the new create_after_sales_orders function
+            from src.utils.jdl_automation import create_after_sales_orders
+            success_count, failed_numbers = create_after_sales_orders(
+                self.config_manager, tracking_numbers, username, password)
+            
+            # Update status based on results
+            if success_count == len(tracking_numbers):
+                self.after(0, lambda: self._update_status(f"Successfully processed all tracking numbers in JDL", 'green'))
+            elif success_count > 0:
+                self.after(0, lambda: self._update_status(
+                    f"Processed {success_count} of {len(tracking_numbers)} tracking numbers in JDL", 'orange'))
+            else:
+                self.after(0, lambda: self._update_status("Failed to process any tracking numbers in JDL", 'red'))
+                
+        except Exception as e:
+            error_msg = str(e)
+            self.after(0, lambda: self._update_status(f"Error in JDL automation thread: {error_msg}", 'red'))
+            logging.error(f"JDL automation thread error: {error_msg}")
+            
+            # Log to visual logger if available
+            try:
+                from src.utils.jdl_automation import visual_logger
+                self.after(0, lambda: visual_logger.log(f"Error: {error_msg}", "ERROR"))
+            except ImportError:
+                pass
+                
+        finally:
+            # We don't close the JDL automation here anymore
+            # The browser tab will be closed manually when the user clicks the Close Tab button
+            pass

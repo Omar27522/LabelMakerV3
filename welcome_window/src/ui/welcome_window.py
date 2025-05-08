@@ -25,6 +25,7 @@ from src.utils.dialog_handlers import (
 )
 from src.ui.create_label_frame import CreateLabelFrame
 from src.ui.returns_data_dialog import create_returns_data_dialog
+from src.ui.jdl_automation_frame import JDLAutomationFrame
 
 # Third-party imports
 import pyautogui
@@ -170,44 +171,44 @@ class WelcomeWindow(tk.Tk):
         
         # Define button specifications
         button_specs = [
-            {
-                'text': 'User',
-                'colors': colors['user'],
-                'command': self.user_action,
-                'big': True,
-                'grid': (0, 0, 2, 1),
-                'padx': 15,
-                'pady': 10,
-                'sticky': 'nsew'
-            },
-            {
-                'text': 'Management',
-                'colors': colors['management'],
-                'command': self.management_action,
-                'grid': (0, 1, 1, 1),
-                'padx': 10,
-                'pady': 5,
-                'sticky': 'nsew'
-            },
-            {
-                'text': 'Labels',
-                'colors': colors['labels'],
-                'command': self.labels_action,
-                'grid': (1, 1, 1, 1),
-                'padx': 10,
-                'pady': 5,
-                'sticky': 'nsew'
-            },
-            {
-                'text': 'Settings',
-                'colors': colors['settings'],
-                'command': self.settings_action,
-                'grid': (2, 0, 1, 2),
-                'padx': 10,
-                'pady': 5,
-                'sticky': 'ew'
-            }
-        ]
+        {
+            'text': 'User',
+            'colors': colors['user'],
+            'command': self.user_action,
+            'big': True,
+            'grid': (0, 0, 2, 1),
+            'padx': 15,
+            'pady': 10,
+            'sticky': 'nsew'
+        },
+        {
+            'text': 'Management',
+            'colors': colors['management'],
+            'command': self.management_action,
+            'grid': (0, 1, 1, 1),
+            'padx': 10,
+            'pady': 5,
+            'sticky': 'nsew'
+        },
+        {
+            'text': 'Labels',
+            'colors': colors['labels'],
+            'command': self.labels_action,
+            'grid': (1, 1, 1, 1),
+            'padx': 10,
+            'pady': 5,
+            'sticky': 'nsew'
+        },
+        {
+            'text': 'Settings',
+            'colors': colors['settings'],
+            'command': self.settings_action,
+            'grid': (2, 0, 1, 2),
+            'padx': 10,
+            'pady': 5,
+            'sticky': 'ew'
+        }
+    ]
         
         # Create button grid
         button_frame, buttons = create_button_grid(self.welcome_frame, button_specs, num_columns=2)
@@ -698,5 +699,32 @@ class WelcomeWindow(tk.Tk):
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
             # Log the error
             print(f"Error in no_record_label_action: {str(e)}")
+            # Return to welcome screen
+            self.return_to_welcome()
+    
+    def jdl_automation_action(self):
+        """Handle the JDL Automation button click"""
+        try:
+            # Hide the welcome frame
+            self.welcome_frame.pack_forget()
+            
+            # Create the JDL automation frame if it doesn't exist
+            if not hasattr(self, 'jdl_automation_frame') or not self.jdl_automation_frame:
+                self.jdl_automation_frame = JDLAutomationFrame(
+                    self.container_frame,
+                    self.config_manager,
+                    self.return_to_welcome
+                )
+            
+            # Show the JDL automation frame
+            self.jdl_automation_frame.pack(fill='both', expand=True)
+            
+            # Update window title
+            self.title("JDL Global IWMS Automation")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+            # Log the error
+            print(f"Error in jdl_automation_action: {str(e)}")
             # Return to welcome screen
             self.return_to_welcome()

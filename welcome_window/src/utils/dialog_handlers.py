@@ -128,7 +128,7 @@ def create_settings_dialog_handler(parent, config_manager, update_label_count_ca
         The created settings dialog
     """
     # Function to handle saving settings
-    def save_settings(dialog, directory, transparency_enabled=None, transparency_level=None):
+    def save_settings(dialog, directory, transparency_enabled=None, transparency_level=None, reverseinbound_creation=None, inbound_processing_delay=None, jdl_automation_enabled=None, jdl_username=None, jdl_password=None, jdl_main_url=None, jdl_after_sales_url=None, show_automation_log=None, jdl_visual_logger_mode=None):
         # Save the directory to settings
         config_manager.settings.last_directory = directory
         
@@ -140,6 +140,45 @@ def create_settings_dialog_handler(parent, config_manager, update_label_count_ca
             # Ensure the transparency level is within valid range (0.1 to 1.0)
             config_manager.settings.transparency_level = max(0.1, min(1.0, transparency_level))
         
+        # Save reverseinbound_creation setting if provided
+        if reverseinbound_creation is not None:
+            config_manager.settings.reverseinbound_creation = reverseinbound_creation
+        
+        # Save inbound processing delay if provided
+        if inbound_processing_delay is not None:
+            try:
+                # Convert to float and ensure it's within valid range (0.0 to 10.0)
+                delay_value = float(inbound_processing_delay)
+                config_manager.settings.inbound_processing_delay = max(0.0, min(10.0, delay_value))
+            except (ValueError, TypeError):
+                # If conversion fails, use default value
+                config_manager.settings.inbound_processing_delay = 0.5
+        
+        # Save JDL automation settings if provided
+        if jdl_automation_enabled is not None:
+            config_manager.settings.jdl_automation_enabled = jdl_automation_enabled
+            
+        if jdl_username is not None:
+            config_manager.settings.jdl_username = jdl_username
+            
+        if jdl_password is not None:
+            config_manager.settings.jdl_password = jdl_password
+            
+        # Save JDL URL settings if provided
+        if jdl_main_url is not None:
+            config_manager.settings.jdl_main_url = jdl_main_url
+            
+        if jdl_after_sales_url is not None:
+            config_manager.settings.jdl_after_sales_url = jdl_after_sales_url
+            
+        # Save show_automation_log setting if provided
+        if show_automation_log is not None:
+            config_manager.settings.show_automation_log = show_automation_log
+        
+        # Save JDL visual logger mode if provided
+        if jdl_visual_logger_mode is not None:
+            config_manager.settings.jdl_visual_logger_mode = jdl_visual_logger_mode
+            
         # Save all settings
         config_manager.save_settings()
         

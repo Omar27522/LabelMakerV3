@@ -3,3 +3,8 @@
 2025-05-06 09:37:17,867 - INFO - App reference set in SingleInstanceApp
 2025-05-06 09:37:29,558 - INFO - Mutex released during cleanup
 2025-05-06 09:37:29,558 - INFO - Application shutting down
+2025-05-08 10:06:32,846 - INFO - First instance of application started (mutex created)
+2025-05-08 10:06:32,847 - INFO - Set AppUserModelID to LabelMaker.WelcomeWindow.1.0
+2025-05-08 10:06:32,973 - INFO - App reference set in SingleInstanceApp
+2025-05-08 10:07:22,719 - INFO - Mutex released during cleanup
+2025-05-08 10:07:22,720 - INFO - Application shutting down

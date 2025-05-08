@@ -17,6 +17,10 @@ class LabelSettings:
     # Window settings
     always_on_top: bool = False
     transparency_level: float = 0.9
+    auto_close_browser_tabs: bool = True  # Whether to automatically close browser tabs when toggling buttons
+    
+    # Log settings
+    automation_activity_log_enabled: bool = True  # Whether to enable detailed automation activity logging
     
     # Directory and counter
     last_directory: Optional[str] = None
@@ -27,6 +31,10 @@ class LabelSettings:
     view_files_pin_window: bool = False
     view_files_auto_switch: bool = True
     view_files_print_minimize: bool = False  # Print minimize feature
+    
+    # JDL URL settings
+    jdl_reverse_inbound_url: str = "https://iwms.us.jdlglobal.com/#/createAfterSalesOrder"
+    jdl_receive_url: str = "https://iwms.us.jdlglobal.com/#/scan"
     
     # Label dimensions
     DPI: int = 300
@@ -81,6 +89,10 @@ class ConfigManager:
                         # Window settings
                         always_on_top=data.get('always_on_top', self.settings.always_on_top),
                         transparency_level=data.get('transparency_level', self.settings.transparency_level),
+                        auto_close_browser_tabs=data.get('auto_close_browser_tabs', self.settings.auto_close_browser_tabs),
+                        
+                        # Log settings
+                        automation_activity_log_enabled=data.get('automation_activity_log_enabled', self.settings.automation_activity_log_enabled),
                         
                         # Directory and counter
                         last_directory=last_dir,
@@ -91,6 +103,10 @@ class ConfigManager:
                         view_files_pin_window=data.get('view_files_pin_window', False),
                         view_files_auto_switch=data.get('view_files_auto_switch', True),
                         view_files_print_minimize=data.get('view_files_new_feature', False),
+                        
+                        # JDL URL settings
+                        jdl_reverse_inbound_url=data.get('jdl_reverse_inbound_url', self.settings.jdl_reverse_inbound_url),
+                        jdl_receive_url=data.get('jdl_receive_url', self.settings.jdl_receive_url),
                         
                         # DPI setting
                         DPI=data.get('DPI', self.settings.DPI),
@@ -125,6 +141,10 @@ class ConfigManager:
                 # Window settings
                 'always_on_top': self.settings.always_on_top,
                 'transparency_level': self.settings.transparency_level,
+                'auto_close_browser_tabs': self.settings.auto_close_browser_tabs,
+                
+                # Log settings
+                'automation_activity_log_enabled': self.settings.automation_activity_log_enabled,
                 
                 # Directory and counter
                 'last_directory': self.settings.last_directory if self.settings.last_directory else "",
@@ -135,6 +155,10 @@ class ConfigManager:
                 'view_files_pin_window': self.settings.view_files_pin_window,
                 'view_files_auto_switch': self.settings.view_files_auto_switch,
                 'view_files_new_feature': self.settings.view_files_print_minimize,
+                
+                # JDL URL settings
+                'jdl_reverse_inbound_url': self.settings.jdl_reverse_inbound_url,
+                'jdl_receive_url': self.settings.jdl_receive_url,
                 
                 # DPI setting
                 'DPI': self.settings.DPI,
