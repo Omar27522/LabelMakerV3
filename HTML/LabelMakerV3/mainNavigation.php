@@ -3,10 +3,16 @@
                 <p>The LabelMakerV3 application is organized into four main sections, accessible from the Welcome screen. This section will help you understand how to navigate through these areas and what each one offers.</p>
                 
                 <h3>User Section</h3>
+                
+<img src="media/software/create_label_default.jpg" alt="LabelMakerV3 Software">
+
+                <h2>Image Text Blocks</h2>
+<p>How to place text blocks over an image:</p>
+
+
                 <details>
                 <summary class="highlight-box">
                     <span class="button green">User</span> - For day-to-day label creation and printing tasks
-                    <img src="media/software/create_label_default.jpg" alt="LabelMakerV3 Software">
                 </summary>
                 <p>When you click on the User button, you'll be taken to the Create Label interface:</p>
                 
