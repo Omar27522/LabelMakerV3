@@ -8,3 +8,6 @@
 2025-05-08 10:06:32,973 - INFO - App reference set in SingleInstanceApp
 2025-05-08 10:07:22,719 - INFO - Mutex released during cleanup
 2025-05-08 10:07:22,720 - INFO - Application shutting down
+2025-05-08 16:57:10,823 - INFO - Another instance is already running (detected by mutex)
+2025-05-08 16:57:10,824 - INFO - Application is already running. Exiting.
+2025-05-08 16:57:12,155 - INFO - Application shutting down
