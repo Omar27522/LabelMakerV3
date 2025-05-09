@@ -1,0 +1,127 @@
+/* Define specific clickable areas */
+#wNumberOfLabels{
+    top: 17%;
+    left: 33%;
+    width: 8%;
+    height: 5.5%;
+}
+#wUser{
+    top: 37%;
+    left: 9%;
+    width: 48%;
+    height: 33%;
+}
+#wManagement{
+    top: 36%;
+    left: 64%;
+    width: 27.3%;
+    height: 16.5%;
+}
+#wLabels{
+    top: 55%;
+    left: 64%;
+    width: 27.3%;
+    height: 16.5%;
+}
+#wSettings{
+    top: 74%;
+    left: 8%;
+    width: 83%;
+    height: 11.5%;
+}
+#wNoRecord{
+    top: 89%;
+    left: 79%;
+    width: 6%;
+    height: 5%;
+}
+#wReset{
+    top: 89%;
+    left: 3.5%;
+    width: 16%;
+    height: 4%;
+}
+
+  .instructions {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-left: 4px solid var(--primary-color);
+  }
+  
+/* Clickable Image Map Styles */
+.image-map-container {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    margin: 20px auto;
+  }
+  
+  .clickable-image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .clickable-area {
+    position: absolute;
+    background-color: rgba(52, 152, 219, 0.112);
+    border: 2px solid rgba(52, 152, 219, 0.7);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .clickable-area:hover {
+    background-color: rgba(52, 152, 219, 0.3);
+  }
+  
+  .clickable-area::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--dark-color);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  
+  .clickable-area:hover::after {
+    opacity: 1;
+  }
+  
+  .tooltip-content {
+    display: none;
+    position: absolute;
+    width: 300px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    left: 50%;
+    transform: translateX(-50%);
+    top: calc(100% + 10px);
+  }
+  
+  .clickable-area:focus {
+    outline: none;
+    background-color: rgba(52, 152, 219, 0.205);
+  }
+  
+  .clickable-area:focus .tooltip-content {
+    display: block;
+  }
+  
+  

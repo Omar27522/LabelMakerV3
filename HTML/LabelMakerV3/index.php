@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LabelMakerV3 User Guide</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles/styles.css">
+    <link rel="stylesheet" href="styles/gettingStarted.css">
+    <link rel="stylesheet" href="styles/mainNavigation.css">
 </head>
 <body>
     <header>

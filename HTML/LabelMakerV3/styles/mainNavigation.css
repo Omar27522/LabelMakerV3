@@ -1,0 +1,63 @@
+
+#clReturn {
+    top: 15%;
+    left: 5%;
+    width: 25%;
+    height: 5.5%;
+  }
+  
+  #clTrackingNumber {
+    top: 41%;
+    left: 5%;
+    width: 90%;
+    height: 4%;
+  }
+  
+  #clSKU {
+    top: 54%;
+    left: 5%;
+    width: 90%;
+    height: 4%;
+  }
+  
+  #clTransparency {
+    top: 64%;
+    left: 78%;
+    width: 10.2%;
+    height: 8%;
+  }
+  
+  #clPrintOptions {
+   top: 79%;
+   left: 5.5%;
+   width:86%;
+   height:14%;
+  }
+  
+  #clReturnsData {
+    top: 15%;
+    left: 51.7%;
+    width: 10%;
+    height: 5.5%;
+  }
+  
+  #clPinButton {
+    top: 15%;
+    left: 83%;
+    width: 10.3%;
+    height: 7%;
+  }
+  
+  #clMirrorPrint {
+    top: 64%;
+    left: 18%;
+    width: 10.2%;
+    height: 8%;
+  }
+  
+  #clPrint {
+    top: 64%;
+    left: 51%;
+    width: 10.2%;
+    height: 8%;
+  }
