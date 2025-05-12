@@ -43,8 +43,8 @@
             ?>
             
             <?php include 'introduction.php'; ?>
-            <?php include 'gettingStarted.php'; ?>
-            <?php include 'mainNavigation.php'; ?>
+            <?php include 'gettingStarted/gettingStarted.php'; ?>
+            <?php include 'mainNavigation/controller.php'; ?>
             <?php include 'creatingLabels/creatingLabels.php'; ?>
             <?php include 'noRecordLabels/noRecordLabels.php'; ?>
             <?php include 'googleSheetIntegration/googleSheetIntegration.php'; ?>
@@ -60,4 +60,15 @@
         <p>&copy; <?php echo date('M Y'); ?> LabelMakerV3. All rights reserved.</p>
     </footer>
 </body>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", 
+function () {let link = document.querySelector('a.second_click'); let clickCount = 0;
+    if (link) { link.addEventListener("click", function (event) {
+            clickCount++;// Prevent action on the first click
+            if (clickCount % 2 !== 0) {event.preventDefault();//console.log("Ignored first click");
+}});}});
+</script>
 </html>

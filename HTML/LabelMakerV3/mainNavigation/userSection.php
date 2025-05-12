@@ -2,13 +2,32 @@
 <?php echo basename(__FILE__); ?>
 <div class="container">
     <main>
+        
+    
+    <?php include 'navigationButtons.php'; navigationButtons('User'); ?>
+    <details id="UserSection" class="mainNavigationButtons"><summary><span class="<?= $buttons ?>"><?= $details ?></span></summary>
+    <summary><a href="#ManagementSection"><span class="<?= $buttons1 ?>"><?= $details1 ?></span></a></summary>
+    <summary><span class="<?= $buttons2 ?>"><?= $details2 ?></span></summary>
+    <summary><span class="<?= $buttons3 ?>"><?= $details3 ?></span></summary>
+    </details>
+ 
 
 
-        <span class="button green">User</span>
+
+
+
+
+
+
+
+
+
+
+
+
         <p>When you click on the User button, you'll be taken to the Create Label interface:</p>
-
-
         <ul style="column-count: 2;">
+
             <p>
                 <li><strong>Control Buttons:</strong></li>
             <ul>
@@ -17,8 +36,6 @@
                 <li>Pin: Pins the window to the top of the screen</li>
             </ul>
             </p>
-
-
 
             <p>
                 <li><strong>Create New Label Record Field:</strong>
@@ -57,9 +74,9 @@
                 <li>The program will become transparent when inactive.</li>
                 <li>Adjust transparency level (1-10) in Settings.</li>
             </ul>
-
             </li>
             </p>
+
             <p>
                 <li><strong>Print Label:</strong>
                     <ul>
@@ -201,9 +218,5 @@
                 </div>
                 <aside>
         </section>
-
-
-
     </main>
-
 </div>

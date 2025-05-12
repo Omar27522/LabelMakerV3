@@ -227,3 +227,7 @@ details{
   display: inline;
   cursor: pointer;
 }
+
+.mainNavigationButtons summary {
+  display: inline;
+}

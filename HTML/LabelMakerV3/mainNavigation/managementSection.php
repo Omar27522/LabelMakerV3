@@ -1,7 +1,16 @@
 <h3>Management Section</h3>
+
 <?php echo basename(__FILE__); ?>
                 <div class="container">
         <main>
+        <?php navigationButtons('Management'); ?>
+<details class="mainNavigationButtons"><summary><span id="ManagementSection" class="<?= $buttons ?>"><?= $details ?></span></summary>
+    <summary><a href="#UserSection"><span class="<?= $buttons1 ?>"><?= $details1 ?></span></a></summary>
+    <summary><span class="<?= $buttons2 ?>"><?= $details2 ?></span></summary>
+    <summary><span class="<?= $buttons3 ?>"><?= $details3 ?></span></summary>
+    </details>
+
+
             <section>
                 <aside style="display: grid;
   grid-template-columns: 1fr 1fr; /* Creates two equal columns */

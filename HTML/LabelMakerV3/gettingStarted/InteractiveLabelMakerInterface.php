@@ -27,14 +27,17 @@
                             </div>
                         </a>
 
+                        <a href="#Create_New_Record_Label" class="second_click">
                         <div class="clickable-area" id="wUser" data-tooltip="User Button"
                                 tabindex="0">
                                 <div class="tooltip-content">
                                     <h3>Create Label Record</h3>
+                                    
                                     <img src="media/software/create_label_default.jpg" alt="User Button"
                                         style="width: 100%;">
+                                    </div>
                                 </div>
-                        </div>
+                            </a>
                         
                         <div class="clickable-area" id="wManagement" data-tooltip="Management Button"
                                 tabindex="0">
@@ -85,3 +88,5 @@
         </main>
 
     </div>
+
+
