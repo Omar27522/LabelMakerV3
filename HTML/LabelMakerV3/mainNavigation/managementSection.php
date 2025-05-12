@@ -115,48 +115,25 @@
                         </div>
                     </div>
                     
-					<div class="clickable-area" id="clMirrorPrint" data-tooltip="Mirror Print" tabindex="0">
+					<div class="clickable-area" id="lmPreview" data-tooltip="Preview" tabindex="0">
                         <div class="tooltip-content">
-                            <h3>Mirror Print</h3>
-                            <p>Prints the Label in Mirror View.</p>
+                            <h3>Preview</h3>
+                            <p>Preview the Label before printing.</p>
                         </div>
                     </div>
 					
-                    <div class="clickable-area" id="clTransparency" data-tooltip="Action Buttons" tabindex="0">
+                    <div class="clickable-area" id="lmSave" data-tooltip="Save" tabindex="0">
                         <div class="tooltip-content">
-                            <h3>Transparency</h3>
-                            <p>Enables or Disables window Transparency, when out of focus.</p>
-							<p>Default Transparency set to: 7.</p>
-                            <!-- <ul>
-                                <li><strong>Preview:</strong> Shows how the label will look</li>
-                                <li><strong>View Files:</strong> Browse label files you've created</li>
-                            </ul> -->
+                            <h3>Save</h3>
+                            <p>Saves the Label to the database.</p>
                         </div>
                     </div>
+					
+                   
+					
+					
+					
                     
-					<div class="clickable-area" id="clPrint" data-tooltip="Print" tabindex="0">
-                        <div class="tooltip-content">
-                            <h3>Print</h3>
-                            <p>Label will be recorded into the system, and the software will print a label by default.</p>
-                            <ul>
-                                <li><strong>Enabled:</strong> Label will print.</li>
-                                <li><strong>Disabled:</strong> Label will not print.</li>
-                            </ul>
-                        </div>
-                    </div>
-					
-					
-                    <div class="clickable-area" id="clPrintOptions" data-tooltip="Print Options" tabindex="0">
-                        <div class="tooltip-content">
-                            <h3>Print Options</h3>
-                            <p>Configure how your label will be printed:</p>
-                            <ul>
-                                <li><strong>MP:</strong> Mirror Print - prints the label in reverse for thermal printers</li>
-                                <li><strong>Print:</strong> Enable/disable printing (will still record the label if disabled)</li>
-                                <li><strong>TR:</strong> Enable Transparency - makes the program transparent when inactive</li>
-                            </ul>
-                        </div>
-                    </div>
                 </div>
                 
                 
