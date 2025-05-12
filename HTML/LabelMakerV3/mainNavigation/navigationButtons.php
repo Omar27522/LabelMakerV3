@@ -30,6 +30,27 @@ function navigationButtons($summary){
         $details3 = $settings[1];
     }
 
+    if ($summary == 'Labels') {
+        $buttons = $labels[0];
+        $details = $labels[1];
+        $buttons1 = $user[0];
+        $details1 = $user[1];
+        $buttons2 = $management[0];
+        $details2 = $management[1];
+        $buttons3 = $settings[0];
+        $details3 = $settings[1];
+    }
+
+    if ($summary == 'Settings') {
+        $buttons = $settings[0];
+        $details = $settings[1];
+        $buttons1 = $user[0];
+        $details1 = $user[1];
+        $buttons2 = $management[0];
+        $details2 = $management[1];
+        $buttons3 = $labels[0];
+        $details3 = $labels[1];
+    }
 
 
 

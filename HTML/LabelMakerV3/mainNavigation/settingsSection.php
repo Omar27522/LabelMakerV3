@@ -1,7 +1,14 @@
 
 <h3>Settings Section</h3>
+<?php navigationButtons('Settings'); ?>
 <?php echo basename(__FILE__); ?>
+
                 <div class="highlight-box">
+                <details class="mainNavigationButtons"><summary><span id="SettingsSection" class="<?= $buttons ?>"><?= $details ?></span></summary>
+    <summary><a href="#UserSection"><span class="<?= $buttons1 ?>"><?= $details1 ?></span></a></summary>
+    <summary><a href="#ManagementSection"><span class="<?= $buttons2 ?>"><?= $details2 ?></span></a></summary>
+    <summary><a href="#LabelsSection"><span class="<?= $buttons3 ?>"><?= $details3 ?></span></a></summary>
+    </details>
                     <p><span class="button gray">Settings</span> - For configuring application preferences</p>
                 </div>
                 <p>The Settings section (gray button on the Welcome screen) allows you to configure the application according to your preferences.</p>

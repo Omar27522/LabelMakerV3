@@ -7,8 +7,8 @@
     <?php include 'navigationButtons.php'; navigationButtons('User'); ?>
     <details id="UserSection" class="mainNavigationButtons"><summary><span class="<?= $buttons ?>"><?= $details ?></span></summary>
     <summary><a href="#ManagementSection"><span class="<?= $buttons1 ?>"><?= $details1 ?></span></a></summary>
-    <summary><span class="<?= $buttons2 ?>"><?= $details2 ?></span></summary>
-    <summary><span class="<?= $buttons3 ?>"><?= $details3 ?></span></summary>
+    <summary><a href="#LabelsSection"><span class="<?= $buttons2 ?>"><?= $details2 ?></span></a></summary>
+    <summary><a href="#SettingsSection"><span class="<?= $buttons3 ?>"><?= $details3 ?></span></a></summary>
     </details>
  
 
