@@ -55,14 +55,14 @@
 }
 #lmPreview {
     top: 63%;
-    left: 20%;
-    width: 50%;
+    left: 22%;
+    width: 25%;
     height: 4.5%;
 }
-#lmSave {
-    top: 70%;
-    left: 46%;
-    width: 50%;
+#lmViewFiles{
+    top: 65%;
+    left: 52%;
+    width: 25%;
     height: 4.5%;
 }
 

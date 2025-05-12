@@ -122,10 +122,10 @@
                         </div>
                     </div>
 					
-                    <div class="clickable-area" id="lmSave" data-tooltip="Save" tabindex="0">
+                    <div class="clickable-area" id="lmViewFiles" data-tooltip="View Files" tabindex="0">
                         <div class="tooltip-content">
-                            <h3>Save</h3>
-                            <p>Saves the Label to the database.</p>
+                            <h3>View Files</h3>
+                            <p>Opens the View Files window.</p>
                         </div>
                     </div>
 					
