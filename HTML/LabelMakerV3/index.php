@@ -12,7 +12,7 @@
     <header>
         <h1>LabelMakerV3 User Guide</h1>
     </header>
-    
+    <!--
     <nav>
         <ul>
             <li><a href="#introduction">Introduction</a></li>
@@ -23,6 +23,7 @@
             <li><a href="#google-sheets">Google Sheets</a></li>
         </ul>
     </nav>
+-->
     
     <div class="container">
         <div class="toc">

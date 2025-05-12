@@ -1,3 +1,14 @@
+<nav>
+        <ul>
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#getting-started">Getting Started</a></li>
+            <li><a href="#main-navigation">Main Navigation</a></li>|
+            <!-- <li><a href="#creating-labels">Creating Labels</a></li> -->
+            <li><a href="#no-record-labels">No Record Labels</a></li>
+            <li><a href="#google-sheets">Google Sheets</a></li>
+        </ul>
+    </nav>
+
 <section id="creating-labels">
                 <h2>4. Creating Labels</h2>
                 <p>Creating labels is the core functionality of LabelMakerV3. This section will guide you through the process of creating, previewing, and saving labels for your products.</p>

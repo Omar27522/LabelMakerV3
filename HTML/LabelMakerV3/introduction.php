@@ -1,5 +1,26 @@
+
+<nav>
+        <ul>
+           | <!-- <li><a href="#introduction">Introduction</a></li> -->
+            <li><a href="#getting-started">Getting Started</a></li>
+            <li><a href="#main-navigation">Main Navigation</a></li>
+            <li><a href="#creating-labels">Creating Labels</a></li>
+            <li><a href="#no-record-labels">No Record Labels</a></li>
+            <li><a href="#google-sheets">Google Sheets</a></li>
+        </ul>
+    </nav>
 <section id="introduction">
     <h2>1. Introduction</h2>
+
+    
+
+
+
+
+
+
+
+
     <p>Welcome to the LabelMakerV3 User Guide! This comprehensive guide will help you learn how to use the LabelMakerV3
         application to create, manage, and print labels for your products. Whether you're a small business owner, an
         inventory manager, or someone who needs to organize products, this guide will walk you through every aspect of
