@@ -33,6 +33,8 @@ This document provides a comprehensive map of all windows and dialogs in the Lab
 - Tracking number/SKU entry fields
 - Print toggle, Mirror Print toggle
 - Auto-copy tracking number, keyboard shortcuts
+- JDL Automation for processing tracking numbers
+- "R" toggle button for receive mode
 - Error handling, status messages
 
 ---
@@ -119,6 +121,45 @@ This document provides a comprehensive map of all windows and dialogs in the Lab
 **File Location:** `src/ui/window_transparency.py`
 **Class:** `TransparencyManager`
 **Purpose:** Manage window transparency settings.
+
+---
+
+### 11. Container Card Dialog
+**File Location:** `src/ui/container_card_dialog.py`
+**Class:** `ContainerCardDialog`
+**Purpose:** Dialog for entering container card numbers during receive operations.
+
+**Key Features:**
+- Modal dialog that appears after label processing when in receive mode
+- Container card number entry field
+- Submit and Cancel buttons
+- Error handling and validation
+
+---
+
+### 12. JDL Automation
+**File Location:** `src/utils/jdl_automation.py`
+**Class:** `JDLAutomation`
+**Purpose:** Automate interactions with the JDL Global IWMS system.
+
+**Key Features:**
+- Singleton pattern for consistent instance management
+- Automated browser interaction for tracking number processing
+- Visual feedback through logging
+- Thread-safe operations
+
+---
+
+### 13. Receive Manager
+**File Location:** `src/utils/receive.py`
+**Class:** `ReceiveManager`
+**Purpose:** Manage receive operations for incoming shipments.
+
+**Key Features:**
+- Singleton pattern for consistent instance management
+- Container card processing
+- Automated JDL scan process
+- Comprehensive logging of receive operations
 
 ---
 

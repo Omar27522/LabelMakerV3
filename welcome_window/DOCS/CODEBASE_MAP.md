@@ -31,6 +31,7 @@ welcome_window/
 │   │   ├── labels_settings_dialog.py    # Label settings dialog
 │   │   ├── google_sheets_dialog.py      # Google Sheets configuration dialog
 │   │   ├── log_migration_dialog.py      # Log migration dialog
+│   │   ├── container_card_dialog.py     # Container card entry for receive mode
 │   │   ├── window_state.py              # Window state management
 │   │   ├── window_transparency.py       # Transparency controls
 │   │   └── __init__.py
@@ -52,7 +53,9 @@ welcome_window/
 │   │   ├── text_context_menu.py
 │   │   ├── ui_components.py            # Reusable UI widgets
 │   │   ├── ui_utils.py
-│   │   └── window_utils.py
+│   │   ├── window_utils.py
+│   │   ├── jdl_automation.py           # JDL Global IWMS automation
+│   │   └── receive.py                  # Receive module for incoming shipments
 ├── label_maker_settings.json           # App settings
 ├── main.pyw                            # Application entry point
 ├── README.md
@@ -74,6 +77,7 @@ welcome_window/
 1. User clicks "User" or "Create Label" button in welcome_window.py
 2. `create_label_action()` in welcome_window.py calls `create_label_frame()` from create_label_frame.py
 3. User enters tracking number and presses Enter:
+   - If JDL Automation is enabled, the tracking number is processed with JDL Global IWMS
    - Tracking number is copied to clipboard
    - Focus moves to SKU field
 4. User enters SKU and clicks "Print Label"
@@ -82,6 +86,10 @@ welcome_window/
    - Updates Google Sheets if configured
    - Prints the label
    - Updates label count
+6. If Receive mode is enabled ("R" button):
+   - Container Card Dialog appears
+   - User enters container card number
+   - JDL scan process is automated
 
 ### 2. Google Sheets Integration
 
@@ -101,6 +109,9 @@ welcome_window/
 - Frame-based implementation of label creation
 - Includes Pin toggle for stay-on-top functionality
 - Handles tracking number validation and auto-copy
+- Integrates with JDL Automation for tracking number processing
+- Includes "R" toggle for receive mode
+- Opens Container Card Dialog when in receive mode
 
 ### NoRecordLabelFrame (no_record_label_frame.py)
 - Frame for creating labels without logging
@@ -123,7 +134,14 @@ welcome_window/
 
 ## Recent Enhancements
 
-1. **Auto-copy and Tab in Create Label Window**
+1. **JDL Automation and Receive Module**
+   - Automated processing of tracking numbers with JDL Global IWMS
+   - "R" toggle button for activating receive mode
+   - Container card dialog for tracking incoming shipments
+   - Fully automated JDL scan process with keyboard simulation
+   - Implemented in jdl_automation.py and receive.py
+
+2. **Auto-copy and Tab in Create Label Window**
    - When user presses Enter after typing tracking number:
      - Number is automatically copied to clipboard
      - Focus moves to SKU field

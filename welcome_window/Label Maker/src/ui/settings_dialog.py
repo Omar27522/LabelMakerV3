@@ -118,36 +118,6 @@ class SettingsDialog:
         )
         self.transparency_slider.grid(row=3, column=1, sticky=tk.W+tk.E, pady=5)
         
-        # Create a label for the Log Settings section
-        log_settings_label = tk.Label(general_frame, text="Log Settings", font=("Arial", 10, "bold"))
-        log_settings_label.grid(row=4, column=0, columnspan=2, sticky=tk.W, pady=(15, 10))
-        
-        # Create the automation activity log checkbox
-        # Default to True if the setting doesn't exist yet
-        default_log_enabled = True
-        if hasattr(self.config.settings, 'automation_activity_log_enabled'):
-            default_log_enabled = self.config.settings.automation_activity_log_enabled
-        
-        self.automation_log_var = tk.BooleanVar(value=default_log_enabled)
-        self.automation_log_cb = tk.Checkbutton(
-            general_frame, 
-            text="Enable Automation Activity Log", 
-            variable=self.automation_log_var
-        )
-        self.automation_log_cb.grid(row=5, column=0, columnspan=2, sticky=tk.W, pady=5)
-        
-        # Add a help text for the automation log setting
-        help_text = "When enabled, detailed logs of automation activities will be recorded."
-        automation_log_help = tk.Label(
-            general_frame,
-            text=help_text,
-            font=("Arial", 8, "italic"),
-            fg="gray",
-            wraplength=400,
-            justify=tk.LEFT
-        )
-        automation_log_help.grid(row=6, column=0, columnspan=2, sticky=tk.W, pady=(0, 10))
-        
         # Add more general settings as needed
     
     def create_jdl_tab(self):
@@ -197,9 +167,6 @@ class SettingsDialog:
         self.config.settings.always_on_top = self.always_on_top_var.get()
         self.config.settings.transparency_level = self.transparency_var.get()
         self.config.settings.auto_close_browser_tabs = self.auto_close_tabs_var.get()
-        
-        # Save Automation Activity Log setting
-        self.config.settings.automation_activity_log_enabled = self.automation_log_var.get()
         
         # Save JDL URLs
         if hasattr(self.config.settings, 'jdl_reverse_inbound_url'):

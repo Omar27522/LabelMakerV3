@@ -18,13 +18,9 @@ class Settings:
     transparency_enabled: bool = True  # Setting for window transparency feature
     transparency_level: float = 0.7  # Level of transparency when inactive (0.0 to 1.0)
     reverseinbound_creation: bool = False  # Setting for reverse inbound creation
-    inbound_processing_delay: float = 0.5  # Delay in seconds between processing inbound items
     jdl_automation_enabled: bool = False  # Setting to enable/disable JDL automation
     jdl_username: Optional[str] = None  # JDL Global IWMS username
     jdl_password: Optional[str] = None  # JDL Global IWMS password
-    jdl_main_url: str = "https://iwms.us.jdlglobal.com/"  # Main JDL Global IWMS URL
-    jdl_after_sales_url: str = "https://iwms.us.jdlglobal.com/#/createAfterSalesOrder"  # JDL After Sales URL
-    show_automation_log: bool = False  # Setting to control whether the JDL Automation Activity Log should be shown automatically
     # Google Sheets settings
     google_sheet_url: Optional[str] = None
     google_sheet_name: Optional[str] = None

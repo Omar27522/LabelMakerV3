@@ -792,15 +792,6 @@ class MainWindow(tk.Tk):
         
     def log_diagnostic(self, message):
         """Log a diagnostic message with timestamp"""
-        # Check if automation activity logging is enabled
-        if hasattr(self.config_manager.settings, 'automation_activity_log_enabled') and not self.config_manager.settings.automation_activity_log_enabled:
-            # If logging is disabled, only log critical system messages
-            if message.startswith("===") or "Error" in message:
-                pass  # Still log critical messages and errors
-            else:
-                return  # Skip non-critical messages when logging is disabled
-        
-        # Log the message if diagnostic text widget exists
         if hasattr(self, 'diagnostic_text'):
             timestamp = time.strftime("%H:%M:%S", time.localtime())
             self.diagnostic_text.insert(tk.END, f"[{timestamp}] {message}\n")
@@ -2045,53 +2036,35 @@ class MainWindow(tk.Tk):
 
     def _create_settings_content(self):
         """Create settings window content"""
-        # Create a container frame
-        container = ttk.Frame(self.settings_window)
-        container.pack(fill=tk.BOTH, expand=True)
-        
         # Create a canvas with scrollbar for scrolling
-        canvas = tk.Canvas(container)
-        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        canvas = tk.Canvas(self.settings_window)
+        scrollbar = ttk.Scrollbar(self.settings_window, orient="vertical", command=canvas.yview)
         
         # Configure the canvas
         canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         
         # Pack the canvas and scrollbar
-        scrollbar.pack(side="right", fill="y")
         canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
         
         # Create a frame inside the canvas for the content
-        main_frame = ttk.Frame(canvas)
+        main_frame = ttk.Frame(canvas, padding="10")
         
         # Add the frame to the canvas
         canvas_window = canvas.create_window((0, 0), window=main_frame, anchor="nw")
         
         # Make the frame expand to the width of the canvas
-        def configure_canvas(event):
-            canvas_width = event.width
-            canvas.itemconfig(canvas_window, width=canvas_width)
+        def configure_frame(event):
+            canvas.itemconfig(canvas_window, width=event.width)
         
-        canvas.bind('<Configure>', configure_canvas)
-        
-        # Update the scrollregion when the size of the frame changes
-        def update_scrollregion(event):
-            canvas.configure(scrollregion=canvas.bbox("all"))
-        
-        main_frame.bind('<Configure>', update_scrollregion)
+        canvas.bind('<Configure>', lambda event: [canvas.configure(scrollregion=canvas.bbox("all")), configure_frame(event)])
         
         # Enable mousewheel scrolling
         def _on_mousewheel(event):
-            # Scroll 2 lines at a time for better user experience
-            canvas.yview_scroll(int(-1 * (event.delta / 60)), "units")
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
         
-        # Bind mousewheel to canvas and all its children
         canvas.bind_all("<MouseWheel>", _on_mousewheel)
-        
-        # Add keyboard scrolling
-        self.settings_window.bind("<Up>", lambda e: canvas.yview_scroll(-1, "units"))
-        self.settings_window.bind("<Down>", lambda e: canvas.yview_scroll(1, "units"))
-        self.settings_window.bind("<Prior>", lambda e: canvas.yview_scroll(-1, "pages"))
-        self.settings_window.bind("<Next>", lambda e: canvas.yview_scroll(1, "pages"))
         
         # Unbind the mousewheel event when the window is destroyed
         def _on_destroy(event):
@@ -2295,56 +2268,18 @@ class MainWindow(tk.Tk):
         )
         upload_csv_btn.pack(pady=5)
 
-        # Save settings function
-        def save_settings():
-            try:
-                # Save window settings
-                self.config_manager.settings.always_on_top = always_on_top_var.get()
-                self.config_manager.settings.transparency_level = transparency_var.get()
-                self.config_manager.settings.auto_close_browser_tabs = auto_close_tabs_var.get()
-                
-                # Save JDL URLs
-                if hasattr(self.config_manager.settings, 'jdl_reverse_inbound_url'):
-                    self.config_manager.settings.jdl_reverse_inbound_url = reverse_url_var.get()
-                if hasattr(self.config_manager.settings, 'jdl_receive_url'):
-                    self.config_manager.settings.jdl_receive_url = receive_url_var.get()
-                
-                # Save font sizes
-                try:
-                    self.config_manager.settings.font_size_large = int(large_font_size.get())
-                    self.config_manager.settings.font_size_medium = int(medium_font_size.get())
-                except ValueError:
-                    raise ValueError("Font sizes must be integers")
-                
-                # Save barcode settings
-                try:
-                    self.config_manager.settings.barcode_width = int(barcode_width.get())
-                    self.config_manager.settings.barcode_height = int(barcode_height.get())
-                    self.config_manager.settings.DPI = int(dpi_entry.get())
-                    self.config_manager.settings.barcode_dpi = int(barcode_dpi_entry.get())
-                    self.config_manager.settings.barcode_module_height = float(module_height_entry.get())
-                    self.config_manager.settings.barcode_module_width = float(module_width_entry.get())
-                    self.config_manager.settings.barcode_quiet_zone = float(quiet_zone_entry.get())
-                    self.config_manager.settings.barcode_font_size = int(font_size_entry.get())
-                    self.config_manager.settings.barcode_text_distance = float(text_distance_entry.get())
-                    self.config_manager.settings.barcode_write_text = write_text_var.get()
-                    self.config_manager.settings.barcode_center_text = center_text_var.get()
-                    self.config_manager.settings.barcode_background = background_entry.get()
-                    self.config_manager.settings.barcode_foreground = foreground_entry.get()
-                except ValueError:
-                    raise ValueError("Invalid barcode settings. Please check your inputs.")
-                
-                # Save settings to file
-                self.config_manager.save_settings()
-                
-                # Close the settings window
-                self.settings_window.destroy()
-                
-                # Show success message
-                messagebox.showinfo("Settings Saved", "Your settings have been saved successfully.")
-                
-            except ValueError as e:
-                messagebox.showerror("Invalid Input", str(e))
+        # Window Settings
+        window_frame = ttk.LabelFrame(main_frame, text="Window Settings", padding="5")
+        window_frame.pack(fill=tk.X, pady=5)
+
+        # Always on Top checkbox
+        always_on_top_var = tk.BooleanVar(value=self.config_manager.settings.always_on_top)
+        always_on_top_cb = ttk.Checkbutton(
+            window_frame, 
+            text="Always on Top", 
+            variable=always_on_top_var
+        )
+        always_on_top_cb.grid(row=0, column=0, sticky="w", columnspan=2)
         
         # Auto-close browser tabs checkbox
         auto_close_tabs_var = tk.BooleanVar(value=self.config_manager.settings.auto_close_browser_tabs if hasattr(self.config_manager.settings, 'auto_close_browser_tabs') else True)

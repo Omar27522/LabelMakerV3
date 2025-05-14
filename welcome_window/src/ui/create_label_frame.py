@@ -13,6 +13,7 @@ from tkinter import ttk, messagebox
 
 import pyautogui
 import subprocess
+import pyperclip
 
 # Add the project root directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
@@ -22,10 +23,13 @@ from src.utils.ui_components import create_title_section, create_colored_button,
 from src.utils.barcode_operations import process_barcode
 from src.utils.sheets_operations import write_to_google_sheet
 from src.utils.file_utils import get_central_log_file_path, ensure_directory_exists, directory_exists, file_exists, find_files_by_sku
+from src.utils.log_manager import log_shipping_event
 from src.utils.text_context_menu import add_context_menu
 from src.utils.jdl_automation import JDLAutomation
+from src.utils.receive import ReceiveManager
 from src.ui.window_transparency import TransparencyManager, create_transparency_toggle_button
 from src.ui.returns_data_dialog import ReturnsDataDialog
+from src.ui.container_card_dialog import ContainerCardDialog
 
 # Configure logging
 logs_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'logs')
@@ -64,6 +68,7 @@ class CreateLabelFrame(tk.Frame):
         self.print_enabled_var = tk.BooleanVar(value=True)  # Print enabled by default
         self.stay_on_top_var = tk.BooleanVar(value=config_manager.settings.stay_on_top if hasattr(config_manager.settings, 'stay_on_top') else False)
         self.transparency_var = tk.BooleanVar(value=config_manager.settings.transparency_enabled if hasattr(config_manager.settings, 'transparency_enabled') else True)
+        self.receive_mode_var = tk.BooleanVar(value=config_manager.settings.receive_mode if hasattr(config_manager.settings, 'receive_mode') else False)
         
         # Create UI
         self._create_ui()
@@ -102,7 +107,40 @@ class CreateLabelFrame(tk.Frame):
             font=("Arial", 10, "bold")
         )
         return_button.pack(side='left')
-    
+        
+        # Add the R toggle button for receive mode
+        def toggle_receive_mode():
+            current_state = self.receive_mode_var.get()
+            self.receive_btn.config(
+                bg='#FF5722' if current_state else '#D3D3D3',  # Orange if on, Light Gray if off
+                relief='sunken' if current_state else 'raised'
+            )
+            # Save the setting
+            self.config_manager.settings.receive_mode = current_state
+            self.config_manager.save_settings()
+            # Update UI based on receive mode
+            if current_state:
+                self._update_status("Receive mode activated", 'blue')
+            else:
+                self._update_status("Receive mode deactivated", 'black')
+        
+        # Set initial button state based on saved setting
+        initial_receive_color = '#FF5722' if self.receive_mode_var.get() else '#D3D3D3'  # Orange if on, Light Gray if off
+        initial_receive_relief = 'sunken' if self.receive_mode_var.get() else 'raised'
+        
+        self.receive_btn = tk.Button(
+            return_frame,
+            text="R",
+            bg=initial_receive_color, 
+            fg="white",
+            relief=initial_receive_relief,
+            width=3,
+            font=("Arial", 10, "bold"),
+            command=lambda: [self.receive_mode_var.set(not self.receive_mode_var.get()),
+                            toggle_receive_mode()]
+        )
+        self.receive_btn.pack(side='left', padx=2)
+        
         # Add a button to open the Returns Data Dialog
         def open_returns_data_dialog():
             ReturnsDataDialog(self.winfo_toplevel(), self.config_manager)
@@ -117,7 +155,7 @@ class CreateLabelFrame(tk.Frame):
             width=3,
             padx=3  # Add horizontal padding inside the button
         )
-        returns_data_button.pack(side='left', padx=80)
+        returns_data_button.pack(side='left', padx=5)
         
         # Add a pin button on the right side to toggle stay-on-top
         def toggle_stay_on_top():
@@ -140,6 +178,9 @@ class CreateLabelFrame(tk.Frame):
         # Create pin button with label
         pin_frame = tk.Frame(return_frame, bg='white')
         pin_frame.pack(side='right')
+        
+        #pin_label = tk.Label(pin_frame, text="Pin:", bg='white', font=('TkDefaultFont', 10))
+        #pin_label.pack(side=tk.LEFT, padx=(0, 5))
         
         # Set initial button state based on saved setting
         initial_pin_color = '#FFD700' if self.stay_on_top_var.get() else '#D3D3D3'  # Gold if on, Light Gray if off
@@ -569,6 +610,15 @@ class CreateLabelFrame(tk.Frame):
         
         # If print is disabled, just log the information without printing
         if not print_enabled:
+            # Log the shipping record using the new logging system
+            log_shipping_event(
+                tracking_number=tracking_number,
+                sku=sku,
+                action="log_only",
+                status="success",
+                details="No print - logging only"
+            )
+            
             # Also add to the original shipping_records database to ensure records appear in the Records tab
             from src.utils.database_operations import add_shipping_record
             add_shipping_record(tracking_number, sku, "No print - logging only")
@@ -588,8 +638,16 @@ class CreateLabelFrame(tk.Frame):
             # Show success message
             self._show_success_message(f"Info for {sku} recorded (no print)")
             
-            # Clear input fields for next label
-            self._clear_fields()
+            # Check if receive mode is enabled and open container card dialog
+            if self.receive_mode_var.get():
+                # Store the current values before clearing
+                self.current_tracking = tracking_number
+                self.current_sku = sku
+                # Open container card dialog without clearing fields yet
+                self._open_container_card_dialog()
+            else:
+                # If not in receive mode, clear fields immediately
+                self._clear_fields()
             
             # Update the label count
             if self.update_label_count_callback:
@@ -601,6 +659,15 @@ class CreateLabelFrame(tk.Frame):
         try:
             # Define a function to run after successful printing
             def after_print_success():
+                # Log the shipping record using the new logging system ONLY after successful printing
+                log_shipping_event(
+                    tracking_number=tracking_number,
+                    sku=sku,
+                    action="print",
+                    status="success",
+                    details="Label printed successfully"
+                )
+                
                 # Also add to the original shipping_records database to ensure records appear in the Records tab
                 from src.utils.database_operations import add_shipping_record
                 add_shipping_record(tracking_number, sku, "Label printed successfully")
@@ -983,6 +1050,8 @@ class CreateLabelFrame(tk.Frame):
             self._update_status(f"Error filling UPC field: {error_msg}", 'red')
             # Don't show an error dialog here as it's not critical
             
+    
+
     def _process_tracking_with_jdl(self, tracking_number):
         """
         Process the tracking number with JDL Global IWMS automation
@@ -1037,8 +1106,15 @@ class CreateLabelFrame(tk.Frame):
             
         except Exception as e:
             error_msg = str(e)
-            self._update_status(f"Error in JDL automation: {error_msg}", 'red')
-            logging.error(f"JDL automation error: {error_msg}")
+            self._update_status(f"Error processing tracking number with JDL: {error_msg}", 'red')
+            logging.error(f"Error processing tracking number with JDL: {error_msg}")
+            
+            # Make sure the SKU field is enabled
+            self.field_widgets["SKU:"]["widget"].config(state="normal")
+            self.field_widgets["SKU:"]["widget"].focus_set()
+            
+            # Hide the Close Tab button
+            self.close_tab_button.pack_forget()
     
     def _close_browser_tab(self):
         """
@@ -1073,12 +1149,82 @@ class CreateLabelFrame(tk.Frame):
             
             # Hide the Close Tab button
             self.close_tab_button.pack_forget()
+        
+    def simulate_close_tab_button_click(self):
+        """
+        Update the UI as if the Close Tab button was clicked.
+        This method is thread-safe and can be called from any thread.
+        """
+        # Schedule the UI updates on the main thread
+        self.after(0, lambda: self.field_widgets["SKU:"]["widget"].config(state="normal"))
+        self.after(0, lambda: self.field_widgets["SKU:"]["widget"].focus_set())
+        self.after(0, lambda: self.close_tab_button.pack_forget())
+        self.after(0, lambda: self._update_status("Browser tab automatically closed. Continue with SKU entry.", 'green'))
+        
+    def _open_container_card_dialog(self):
+        """
+        Open the container card dialog for receive mode.
+        """
+        def on_container_card_submit(container_card):
+            # Process the container card
+            self._update_status(f"Container card {container_card} submitted", 'blue')
+            logging.info(f"Container card submitted: {container_card}")
+            
+            # Store the container card number for later use
+            self.current_container_card = container_card
+            
+            # Here you would typically call the receive manager to process the container card
+            try:
+                receive_manager = ReceiveManager.get_instance(self.config_manager)
+                # Process the container card (placeholder for now)
+                # receive_manager.process_container_card(container_card)
+                
+                # Log the complete receive operation
+                if hasattr(self, 'current_tracking') and hasattr(self, 'current_sku'):
+                    logging.info(f"Complete receive operation: Tracking={self.current_tracking}, SKU={self.current_sku}, Container={container_card}")
+                
+                # Start the JDL scan automation process in a separate thread
+                self._update_status("Starting JDL scan automation process...", 'blue')
+                
+                def run_automation():
+                    try:
+                        # Copy tracking number to clipboard for first paste
+                        pyperclip.copy(self.current_tracking)
+                        
+                        # Start the automation process
+                        success = receive_manager.automate_jdl_scan_process(
+                            self.current_tracking,
+                            container_card,
+                            self.current_sku
+                        )
+                        
+                        if success:
+                            self.after(0, lambda: self._update_status("JDL scan automation completed successfully", 'green'))
+                        else:
+                            self.after(0, lambda: self._update_status("JDL scan automation failed", 'red'))
+                    except Exception as e:
+                        error_msg = str(e)
+                        self.after(0, lambda: self._update_status(f"Error in JDL scan automation: {error_msg}", 'red'))
+                        logging.error(f"Error in JDL scan automation thread: {error_msg}")
+                
+                # Run the automation in a separate thread to avoid blocking the UI
+                threading.Thread(target=run_automation, daemon=True).start()
+            except Exception as e:
+                error_msg = str(e)
+                self._update_status(f"Error processing container card: {error_msg}", 'red')
+                logging.error(f"Error processing container card: {error_msg}")
+            
+            # Now clear the fields after container card is processed
+            self._clear_fields()
+        
+        # Create and show the dialog
+        ContainerCardDialog(self.winfo_toplevel(), self.config_manager, on_container_card_submit)
     
     def _jdl_automation_thread(self, jdl, tracking_numbers, username, password):
         """
         Thread function for JDL automation to avoid blocking the UI
         
-        Args:
+{{ ... }}
             jdl: JDLAutomation instance
             tracking_numbers: List of tracking numbers to process
             username: JDL username
@@ -1088,7 +1234,8 @@ class CreateLabelFrame(tk.Frame):
             # Import the visual logger here to ensure it's available
             try:
                 from src.utils.jdl_automation import visual_logger
-                # Do NOT show the visual logger, just log in the background
+                # Make sure the visual logger is shown (must use after to ensure it's on the main thread)
+                self.after(0, lambda: visual_logger.show())
                 self.after(0, lambda: visual_logger.log("Starting JDL automation process", "INFO"))
             except ImportError as e:
                 logging.error(f"Could not import visual logger: {str(e)}")

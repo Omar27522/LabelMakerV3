@@ -26,39 +26,23 @@ class JDLVisualLogger:
     _lock = threading.Lock()
     
     @classmethod
-    def get_instance(cls, config_manager=None):
+    def get_instance(cls):
         """Get the singleton instance of JDLVisualLogger"""
         with cls._lock:
             if cls._instance is None:
-                cls._instance = cls(config_manager=config_manager)
-            elif config_manager and cls._instance.config_manager is None:
-                # If instance exists but didn't have config_manager, update it
-                cls._instance.config_manager = config_manager
+                cls._instance = cls()
             return cls._instance
     
-    def __init__(self, config_manager=None):
+    def __init__(self):
         """Initialize the visual logger window."""
         self.window = None
         self.log_text = None
         self.is_visible = False
         self.log_entries = []
         self.max_entries = 100  # Maximum number of log entries to keep
-        self.config_manager = config_manager
     
     def show(self):
         """Show or create the visual logger window."""
-        # Check setting for logger mode
-        logger_mode = "show" # Default to show
-        if self.config_manager and hasattr(self.config_manager.settings, 'jdl_visual_logger_mode'):
-            logger_mode = self.config_manager.settings.jdl_visual_logger_mode.lower()
-
-        if logger_mode == "disabled":
-            self.is_visible = False # Ensure correct state
-            if self.window and self.window.winfo_exists():
-                self.window.withdraw() # Hide if it already exists
-            return
-
-        # If mode is not 'disabled' (e.g., 'show', or any other value, or setting not present), proceed to show
         if self.window and self.window.winfo_exists():
             self.window.deiconify()
             self.window.lift()
@@ -195,41 +179,58 @@ def activate_browser_window():
     """
     Attempt to bring the browser window to the foreground.
     Different approaches based on the operating system.
+    Will try multiple Alt+Tab attempts if needed.
     """
     try:
         visual_logger.log("Attempting to activate browser window", "INFO")
         
         if platform.system() == "Windows":
             # For Windows, use PowerShell to activate Chrome window
+            browser_activated = False
             try:
                 # First try Chrome
-                subprocess.run([
+                chrome_result = subprocess.run([
                     'powershell', '-Command',
                     '(New-Object -ComObject WScript.Shell).AppActivate("Google Chrome")'                    
-                ], check=False)
+                ], capture_output=True, text=True, check=False)
                 
-                # Then try Edge
-                subprocess.run([
-                    'powershell', '-Command',
-                    '(New-Object -ComObject WScript.Shell).AppActivate("Microsoft Edge")'                    
-                ], check=False)
+                if "True" in chrome_result.stdout:
+                    visual_logger.log("Activated Chrome browser window", "SUCCESS")
+                    browser_activated = True
+                else:
+                    # Then try Edge
+                    edge_result = subprocess.run([
+                        'powershell', '-Command',
+                        '(New-Object -ComObject WScript.Shell).AppActivate("Microsoft Edge")'                    
+                    ], capture_output=True, text=True, check=False)
+                    
+                    if "True" in edge_result.stdout:
+                        visual_logger.log("Activated Edge browser window", "SUCCESS")
+                        browser_activated = True
+                    else:
+                        # Then try Firefox
+                        firefox_result = subprocess.run([
+                            'powershell', '-Command',
+                            '(New-Object -ComObject WScript.Shell).AppActivate("Mozilla Firefox")'                    
+                        ], capture_output=True, text=True, check=False)
+                        
+                        if "True" in firefox_result.stdout:
+                            visual_logger.log("Activated Firefox browser window", "SUCCESS")
+                            browser_activated = True
                 
-                # Then try Firefox
-                subprocess.run([
-                    'powershell', '-Command',
-                    '(New-Object -ComObject WScript.Shell).AppActivate("Mozilla Firefox")'                    
-                ], check=False)
-                
-                visual_logger.log("Activated browser window using PowerShell", "SUCCESS")
+                if browser_activated:
+                    visual_logger.log("Successfully activated browser window using PowerShell", "SUCCESS")
+                else:
+                    visual_logger.log("Could not activate browser with direct method, trying Alt+Tab sequence", "WARNING")
+                    # Fallback to multiple Alt+Tab attempts
+                    _try_multiple_alt_tabs()
             except Exception as e:
                 visual_logger.log(f"PowerShell activation failed: {str(e)}", "WARNING")
-                # Fallback to Alt+Tab
-                pyautogui.hotkey('alt', 'tab')
-                visual_logger.log("Used Alt+Tab to switch windows", "INFO")
+                # Fallback to multiple Alt+Tab attempts
+                _try_multiple_alt_tabs()
         else:
-            # For other OS, try Alt+Tab
-            pyautogui.hotkey('alt', 'tab')
-            visual_logger.log("Used Alt+Tab to switch windows", "INFO")
+            # For other OS, try multiple Alt+Tab attempts
+            _try_multiple_alt_tabs()
             
         # Give the window time to activate
         time.sleep(1)
@@ -237,6 +238,31 @@ def activate_browser_window():
     except Exception as e:
         visual_logger.log(f"Failed to activate browser window: {str(e)}", "ERROR")
         return False
+        
+def _try_multiple_alt_tabs(max_attempts=5):
+    """
+    Try multiple Alt+Tab attempts to find the browser window.
+    
+    Args:
+        max_attempts: Maximum number of Alt+Tab attempts
+    """
+    visual_logger.log(f"Trying up to {max_attempts} Alt+Tab attempts to find browser", "INFO")
+    
+    if platform.system() == "Windows":
+        # Use PowerShell for more reliable Alt+Tab on Windows
+        for i in range(max_attempts):
+            visual_logger.log(f"Alt+Tab attempt {i+1}/{max_attempts}", "INFO")
+            subprocess.run([
+                'powershell', '-Command',
+                '(New-Object -ComObject WScript.Shell).SendKeys("%{TAB}")'                    
+            ], check=False)
+            time.sleep(0.5)  # Short delay between Alt+Tab attempts
+    else:
+        # Use pyautogui for other platforms
+        for i in range(max_attempts):
+            visual_logger.log(f"Alt+Tab attempt {i+1}/{max_attempts}", "INFO")
+            pyautogui.hotkey('alt', 'tab')
+            time.sleep(0.5)  # Short delay between Alt+Tab attempts
 
 class JDLAutomation:
     """Class for automating interactions with the JDL Global IWMS site using the user's default browser."""
@@ -248,6 +274,7 @@ class JDLAutomation:
     # Class variables to track browser state
     browser_tab_open = False
     browser_used = None  # Will store the browser name that was used (e.g., 'chrome', 'edge', etc.)
+    just_opened_browser = False  # Flag to indicate if we just opened the browser
     
     @classmethod
     def get_instance(cls, config_manager=None):
@@ -255,56 +282,26 @@ class JDLAutomation:
         with cls._lock:
             if cls._instance is None:
                 if config_manager is None:
-                    # Optionally raise an error or handle if config_manager is essential
-                    # For now, proceeding will mean visual logger might not get config
-                    pass 
+                    raise ValueError("config_manager must be provided when creating a new instance")
                 cls._instance = cls(config_manager)
-            elif config_manager and cls._instance.config_manager is None:
-                # This case might be relevant if get_instance could be called with and without config_manager
-                cls._instance.config_manager = config_manager
-                # Ensure visual logger also gets updated config_manager if needed
-                JDLVisualLogger.get_instance(config_manager)
-        return cls._instance
-
+            return cls._instance
+    
     def __init__(self, config_manager):
         """
         Initialize the JDL automation.
-
+        
         Args:
             config_manager: The application's configuration manager
         """
         self.config_manager = config_manager
-
-        # Use the configurable URLs from settings, or fall back to defaults if not set
-        if hasattr(config_manager.settings, 'jdl_main_url') and config_manager.settings.jdl_main_url:
-            self.jdl_url = config_manager.settings.jdl_main_url
-        else:
-            self.jdl_url = "https://iwms.us.jdlglobal.com/"
-
+        self.jdl_url = "https://iwms.us.jdlglobal.com/"
         # Update the URL to the correct path for creating after-sales orders
-        if hasattr(config_manager.settings, 'jdl_after_sales_url') and config_manager.settings.jdl_after_sales_url:
-            self.after_sales_url = config_manager.settings.jdl_after_sales_url
-        else:
-            self.after_sales_url = "https://iwms.us.jdlglobal.com/#/createAfterSalesOrder"
-
-        # Ensure URLs have proper format
-        if not self.jdl_url.startswith("http"):
-            self.jdl_url = "https://" + self.jdl_url
-
-        if not self.after_sales_url.startswith("http"):
-            self.after_sales_url = "https://" + self.after_sales_url
-
-        # Ensure the JDLVisualLogger singleton instance has access to config_manager
-        JDLVisualLogger.get_instance(config_manager)
-
-        # Detect default browser on initialization
-        self._detect_default_browser()
+        self.after_sales_url = "https://iwms.us.jdlglobal.com/#/createAfterSalesOrder"
     
     def open_jdl_site(self):
         """
         Open the JDL Global IWMS site in the default browser.
         If a tab is already open, it won't open a new one.
-
         
         Returns:
             bool: True if successful, False otherwise
@@ -450,6 +447,8 @@ class JDLAutomation:
                             JDLAutomation.browser_tab_open = True
                             if JDLAutomation.browser_used:
                                 visual_logger.log(f"Using browser: {JDLAutomation.browser_used}", "INFO")
+                            # Set a flag to indicate we just opened the browser
+                            JDLAutomation.just_opened_browser = True
                             return True
             
             # If we got here with result=True, the original URL worked
@@ -459,6 +458,8 @@ class JDLAutomation:
                 JDLAutomation.browser_tab_open = True
                 if JDLAutomation.browser_used:
                     visual_logger.log(f"Using browser: {JDLAutomation.browser_used}", "INFO")
+                # Set a flag to indicate we just opened the browser
+                JDLAutomation.just_opened_browser = True
                 return True
                 
             # If we've tried all URLs and none worked, return False
@@ -475,8 +476,9 @@ class JDLAutomation:
     
     def process_tracking_number(self, tracking_number):
         """
-        Process a single tracking number by opening the After Sales Order page
-        and copying the tracking number to clipboard for easy pasting.
+        Process a single tracking number by opening the After Sales Order page,
+        copying the tracking number to clipboard, pasting it, pressing Enter,
+        and closing the tab after a delay.
         
         Args:
             tracking_number: The tracking number to process
@@ -516,10 +518,74 @@ class JDLAutomation:
                     visual_logger.log(error_msg, "ERROR")
                     return False
             
-            # Let the user know what to do next
-            visual_logger.log("Browser page opened - tracking number is copied to clipboard", "SUCCESS")
-            visual_logger.log("Please paste the tracking number in the browser and press Enter", "INFO")
+            # Give the page time to load
+            visual_logger.log("Waiting for page to load completely...", "INFO")
+            time.sleep(3)  # Wait for page to fully load
             
+            # The browser should already be active since we just opened it
+            # No need to activate it again unless we're having focus issues
+            if not JDLAutomation.browser_used:
+                # If we don't know which browser was used, activate to be safe
+                visual_logger.log("Activating browser window as a precaution", "INFO")
+                activate_browser_window()
+                time.sleep(1)  # Wait for the browser to be fully active
+            else:
+                visual_logger.log(f"Browser {JDLAutomation.browser_used} should already be active", "INFO")
+            
+            # Paste the tracking number (Ctrl+V)
+            visual_logger.log("Pasting tracking number", "INFO")
+            if platform.system() == "Windows":
+                # Use pyautogui instead of PowerShell to avoid Num Lock issues
+                pyautogui.hotkey('ctrl', 'v')
+            else:
+                pyautogui.hotkey('ctrl', 'v')
+        
+            # Wait a moment after pasting
+            time.sleep(0.5)
+            
+            # Press Enter to submit the form
+            visual_logger.log("Pressing Enter to submit", "INFO")
+            if platform.system() == "Windows":
+                # Use pyautogui instead of PowerShell to avoid Num Lock issues
+                pyautogui.press('enter')
+            else:
+                pyautogui.press('enter')
+            
+            # Wait for the form to process (adjust time as needed)
+            visual_logger.log("Waiting for form submission to complete...", "INFO")
+            time.sleep(5)  # Wait for form submission and page reload
+            
+            # Close the tab after processing
+            visual_logger.log("Closing the browser tab", "INFO")
+            # Use pyautogui for all platforms to avoid Num Lock issues
+            pyautogui.hotkey('ctrl', 'w')
+            
+            # Reset the browser tab flag
+            JDLAutomation.browser_tab_open = False
+            
+            # Notify the UI that the tab has been closed
+            try:
+                # Find the UI instance to notify
+                # This is a bit of a hack, but it works for simple cases
+                # We need to find the root Tk window and then the CreateLabelFrame instance
+                import tkinter as tk
+                for widget in tk._default_root.winfo_children():
+                    # Look for the CreateLabelFrame instance
+                    if hasattr(widget, 'simulate_close_tab_button_click'):
+                        visual_logger.log("Found UI widget, simulating Close Tab button click", "INFO")
+                        widget.simulate_close_tab_button_click()
+                        break
+                    # It might be nested inside another frame
+                    for child in widget.winfo_children():
+                        if hasattr(child, 'simulate_close_tab_button_click'):
+                            visual_logger.log("Found nested UI widget, simulating Close Tab button click", "INFO")
+                            child.simulate_close_tab_button_click()
+                            break
+            except Exception as e:
+                visual_logger.log(f"Could not notify UI of tab closure: {str(e)}", "WARNING")
+                # This is not critical, so we can continue even if it fails
+            
+            visual_logger.log(f"Successfully processed tracking number: {tracking_number}", "SUCCESS")
             return True
                 
         except Exception as e:
@@ -538,9 +604,8 @@ class JDLAutomation:
         Returns:
             tuple: (success_count, failed_tracking_numbers)
         """
-        # Never show the visual logger automatically when scanning a tracking number
-        # Just log the activity in the background
-        # The user can open the log manually from the settings dialog if needed
+        # Make sure visual logger is visible
+        visual_logger.show()
         
         if not tracking_numbers:
             visual_logger.log("No tracking numbers to process", "WARNING")
@@ -548,47 +613,72 @@ class JDLAutomation:
             
         visual_logger.log(f"Processing {len(tracking_numbers)} tracking number(s)", "INFO")
         
-        # For multiple tracking numbers, just open the page and show instructions
+        # For multiple tracking numbers, we have two options:
+        # 1. Process them one by one automatically (new approach)
+        # 2. Just open the page and show instructions (old approach)
         if len(tracking_numbers) > 1:
-            try:
-                visual_logger.log(f"Multiple tracking numbers detected: {len(tracking_numbers)}", "INFO")
+            # Check if we should process them automatically one by one
+            auto_process = True  # Set to True to enable automatic processing of multiple tracking numbers
+            
+            if auto_process:
+                visual_logger.log(f"Automatically processing {len(tracking_numbers)} tracking numbers one by one", "INFO")
                 
-                if not self.open_after_sales_order_page():
-                    visual_logger.log("Failed to open After Sales Order page", "ERROR")
+                success_count = 0
+                failed_numbers = []
+                
+                for idx, tracking_number in enumerate(tracking_numbers):
+                    visual_logger.log(f"Processing tracking number {idx+1}/{len(tracking_numbers)}: {tracking_number}", "INFO")
+                    
+                    # Process this tracking number
+                    if self.process_tracking_number(tracking_number):
+                        success_count += 1
+                    else:
+                        failed_numbers.append(tracking_number)
+                    
+                    # Add a delay between processing tracking numbers
+                    if idx < len(tracking_numbers) - 1:  # Don't delay after the last one
+                        visual_logger.log("Waiting before processing next tracking number...", "INFO")
+                        time.sleep(2)  # Wait between tracking numbers
+                
+                # Return the results
+                return success_count, failed_numbers
+            else:
+                # Use the original approach for multiple tracking numbers
+                try:
+                    visual_logger.log(f"Multiple tracking numbers detected: {len(tracking_numbers)}", "INFO")
+                    
+                    if not self.open_after_sales_order_page():
+                        visual_logger.log("Failed to open After Sales Order page", "ERROR")
+                        return 0, tracking_numbers
+                        
+                    # Join tracking numbers with newlines for easy copying
+                    tracking_list = "\n".join(tracking_numbers)
+                    pyperclip.copy(tracking_list)
+                    visual_logger.log("Copied all tracking numbers to clipboard", "SUCCESS")
+                    
+                    import tkinter.messagebox as messagebox
+                    messagebox.showinfo(
+                        "Process Multiple Tracking Numbers", 
+                        f"The following tracking numbers have been copied to your clipboard:\n\n"
+                        f"{tracking_list}\n\n"
+                        f"Please paste each one into the 'Tracking Number' field on the JDL website and click 'Create'."
+                    )
+                    
+                    visual_logger.log("Ready for user to paste multiple tracking numbers", "SUCCESS")
+                    
+                    # We can't know for sure which ones succeeded, so return all as potential failures
                     return 0, tracking_numbers
                     
-                # Join tracking numbers with newlines for easy copying
-                tracking_list = "\n".join(tracking_numbers)
-                pyperclip.copy(tracking_list)
-                visual_logger.log("Copied all tracking numbers to clipboard", "SUCCESS")
-                
-                import tkinter.messagebox as messagebox
-                messagebox.showinfo(
-                    "Process Multiple Tracking Numbers", 
-                    f"The following tracking numbers have been copied to your clipboard:\n\n"
-                    f"{tracking_list}\n\n"
-                    f"Please paste each one into the 'Tracking Number' field on the JDL website and click 'Create'."
-                )
-                
-                visual_logger.log("Ready for user to paste multiple tracking numbers", "SUCCESS")
-                
-                # We can't know for sure which ones succeeded, so return all as potential failures
-                return 0, tracking_numbers
-                
-            except Exception as e:
-                error_msg = f"Error processing multiple tracking numbers: {str(e)}"
-                logger.error(error_msg)
-                visual_logger.log(error_msg, "ERROR")
-                return 0, tracking_numbers
+                except Exception as e:
+                    error_msg = f"Error processing multiple tracking numbers: {str(e)}"
+                    logger.error(error_msg)
+                    visual_logger.log(error_msg, "ERROR")
+                    return 0, tracking_numbers
         else:
             # Just one tracking number
             visual_logger.log(f"Processing single tracking number: {tracking_numbers[0]}", "INFO")
             if self.process_tracking_number(tracking_numbers[0]):
-                visual_logger.log(f"Successfully processed tracking number: {tracking_numbers[0]}", "SUCCESS")
-                
-                # Don't automatically close the tab - let the user do it with the Close Tab button
-                # The browser_tab_open flag will remain true until the user clicks the Close Tab button
-                
+                # The success message is now logged in the process_tracking_number method
                 return 1, []
             else:
                 visual_logger.log(f"Failed to process tracking number: {tracking_numbers[0]}", "ERROR")
@@ -709,7 +799,8 @@ def create_after_sales_orders(config_manager, tracking_numbers, username=None, p
     Returns:
         tuple: (success_count, failed_tracking_numbers)
     """
-    # Log in the background without showing the visual logger
+    # Get the visual logger instance and show it
+    visual_logger.show()
     visual_logger.log("Starting JDL Global IWMS automation process", "INFO")
     visual_logger.log(f"Received {len(tracking_numbers)} tracking number(s) to process", "INFO")
     

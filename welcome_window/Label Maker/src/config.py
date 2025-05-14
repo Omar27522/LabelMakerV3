@@ -19,9 +19,6 @@ class LabelSettings:
     transparency_level: float = 0.9
     auto_close_browser_tabs: bool = True  # Whether to automatically close browser tabs when toggling buttons
     
-    # Log settings
-    automation_activity_log_enabled: bool = True  # Whether to enable detailed automation activity logging
-    
     # Directory and counter
     last_directory: Optional[str] = None
     label_counter: int = 0
@@ -91,9 +88,6 @@ class ConfigManager:
                         transparency_level=data.get('transparency_level', self.settings.transparency_level),
                         auto_close_browser_tabs=data.get('auto_close_browser_tabs', self.settings.auto_close_browser_tabs),
                         
-                        # Log settings
-                        automation_activity_log_enabled=data.get('automation_activity_log_enabled', self.settings.automation_activity_log_enabled),
-                        
                         # Directory and counter
                         last_directory=last_dir,
                         label_counter=data.get('label_counter', 0),
@@ -142,9 +136,6 @@ class ConfigManager:
                 'always_on_top': self.settings.always_on_top,
                 'transparency_level': self.settings.transparency_level,
                 'auto_close_browser_tabs': self.settings.auto_close_browser_tabs,
-                
-                # Log settings
-                'automation_activity_log_enabled': self.settings.automation_activity_log_enabled,
                 
                 # Directory and counter
                 'last_directory': self.settings.last_directory if self.settings.last_directory else "",

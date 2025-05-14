@@ -1,18 +1,23 @@
 {
   "name": "Label Maker V3",
   "description": "A modular interface for managing the Label Maker application",
-  "version": "1.0.1.5",
+  "version": "1.0.1.6",
   "author": "Baby Manager",
   "language": "python",
   "entrypoint": "main.pyw",
   "dependencies": {
     "python": ">=3.6",
     "pip": [
-      "pywin32>=228",
-      "pyautogui>=0.9.53",
-      "gspread>=5.0.0",
+      "pywin32>=306",
+      "pyautogui>=0.9.54",
+      "gspread>=6.0.0",
       "oauth2client>=4.1.3",
-      "Pillow>=9.0.0"
+      "Pillow>=10.0.0",
+      "pandas>=2.0.0",
+      "python-barcode>=0.14.0",
+      "psutil>=5.9.0",
+      "tkcalendar>=1.6.1",
+      "pyperclip>=1.8.2"
     ]
   },
   "folders": {
@@ -121,7 +126,11 @@
     "No Record Label functionality for printing without logging",
     "Enhanced error handling for missing label files",
     "Scrollable Edit Record window in Returns Data",
-    "Dynamic label count display in welcome window"
+    "Dynamic label count display in welcome window",
+    "JDL Automation for processing tracking numbers",
+    "Receive mode for handling incoming shipments",
+    "Container card dialog for receive operations",
+    "Automated JDL scan process for receiving shipments"
   ],
   "codeNavigation": {
     "src/ui/welcome_window.py": {
