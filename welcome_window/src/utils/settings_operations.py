@@ -422,6 +422,120 @@ def create_settings_dialog(parent, config_manager, update_label_count_callback, 
     )
     password_entry.pack(side='left', padx=(5, 0), fill='x', expand=True)
     
+    # URL Settings Section
+    url_settings_frame = tk.Frame(jdl_section, bg='white')
+    url_settings_frame.pack(fill='x', pady=(10, 5))
+    
+    # URL Settings Header
+    url_header = tk.Label(
+        url_settings_frame,
+        text="URL Settings",
+        font=("Arial", 10, "bold"),
+        bg='white'
+    )
+    url_header.pack(anchor='w', pady=(5, 5))
+    
+    # SCAN URL field
+    scan_url_frame = tk.Frame(url_settings_frame, bg='white')
+    scan_url_frame.pack(fill='x', pady=(5, 5))
+    
+    tk.Label(
+        scan_url_frame,
+        text="SCAN URL:",
+        font=("Arial", 10),
+        bg='white',
+        width=15,
+        anchor='w'
+    ).pack(side='left')
+    
+    scan_url_var = tk.StringVar(value=config_manager.settings.scan_url 
+                              if hasattr(config_manager.settings, 'scan_url') else "")
+    scan_url_entry = tk.Entry(
+        scan_url_frame,
+        textvariable=scan_url_var,
+        font=("Arial", 10),
+        width=30
+    )
+    scan_url_entry.pack(side='left', padx=(5, 0), fill='x', expand=True)
+    
+    # Receive URL field
+    receive_url_frame = tk.Frame(url_settings_frame, bg='white')
+    receive_url_frame.pack(fill='x', pady=(5, 5))
+    
+    tk.Label(
+        receive_url_frame,
+        text="Receive URL:",
+        font=("Arial", 10),
+        bg='white',
+        width=15,
+        anchor='w'
+    ).pack(side='left')
+    
+    receive_url_var = tk.StringVar(value=config_manager.settings.receive_url 
+                                 if hasattr(config_manager.settings, 'receive_url') else "")
+    receive_url_entry = tk.Entry(
+        receive_url_frame,
+        textvariable=receive_url_var,
+        font=("Arial", 10),
+        width=30
+    )
+    receive_url_entry.pack(side='left', padx=(5, 0), fill='x', expand=True)
+    
+    # Exception Base URL field
+    exception_base_url_frame = tk.Frame(url_settings_frame, bg='white')
+    exception_base_url_frame.pack(fill='x', pady=(10, 5))
+    
+    tk.Label(
+        exception_base_url_frame,
+        text="Exception Base URL:",
+        font=("Arial", 10, "bold"),
+        bg='white',
+        width=15,
+        anchor='w'
+    ).pack(side='left')
+    
+    exception_base_url_var = tk.StringVar(value=config_manager.settings.exception_base_url 
+                                        if hasattr(config_manager.settings, 'exception_base_url') else "")
+    exception_base_url_entry = tk.Entry(
+        exception_base_url_frame,
+        textvariable=exception_base_url_var,
+        font=("Arial", 10),
+        width=30
+    )
+    exception_base_url_entry.pack(side='left', padx=(5, 0), fill='x', expand=True)
+    
+    # Exception paths description
+    exception_paths_frame = tk.Frame(url_settings_frame, bg='white')
+    exception_paths_frame.pack(fill='x', pady=(5, 5))
+    
+    exception_paths_label = tk.Label(
+        exception_paths_frame,
+        text="The following paths will be appended to the base URL:",
+        font=("Arial", 9),
+        bg='white',
+        anchor='w'
+    )
+    exception_paths_label.pack(anchor='w', pady=(0, 5))
+    
+    # Exception paths list
+    paths_frame = tk.Frame(url_settings_frame, bg='white')
+    paths_frame.pack(fill='x', pady=(0, 5))
+    
+    paths_text = """• SKU Mismatch: /sku-mismatch
+• RMA Missing: /rma-missing
+• Suspicious Package: /suspicious-package
+• Return to Sender: /return-to-sender"""
+    
+    paths_label = tk.Label(
+        paths_frame,
+        text=paths_text,
+        font=("Arial", 9),
+        bg='white',
+        justify='left',
+        anchor='w'
+    )
+    paths_label.pack(anchor='w', padx=(15, 0))
+    
     # Login to JDL button
     def login_to_jdl():
         # Save current settings first
@@ -433,7 +547,10 @@ def create_settings_dialog(parent, config_manager, update_label_count_callback, 
             reverseinbound_creation_var.get(),
             jdl_automation_enabled_var.get(),
             jdl_username_var.get(),
-            jdl_password_var.get()
+            jdl_password_var.get(),
+            scan_url_var.get(),
+            receive_url_var.get(),
+            exception_base_url_var.get()
         )
         temp_save_settings()
         
@@ -483,6 +600,36 @@ def create_settings_dialog(parent, config_manager, update_label_count_callback, 
     )
     jdl_desc.pack(pady=(0, 5), fill='x')
     
+    # Add Macros Configuration Section
+    macros_section = tk.LabelFrame(content_frame, text="Automation Macros", font=("Arial", 12, "bold"), bg='white', padx=10, pady=10)
+    macros_section.pack(fill='x', pady=(0, 15))
+    
+    # Description
+    macros_desc = tk.Label(
+        macros_section,
+        text="Edit automation macros for SKU mismatch, return to sender, receive mode, and other workflows.",
+        font=("Arial", 10),
+        bg='white',
+        wraplength=450,
+        justify='left'
+    )
+    macros_desc.pack(pady=(5, 10), fill='x')
+    
+    # Edit Macros Button
+    edit_macros_button = create_button(
+        macros_section,
+        text="Edit Macros",
+        command=lambda: parent.open_macro_editor() if hasattr(parent, 'open_macro_editor') else None,
+        bg='#FF9800',  # Orange
+        fg='white',
+        padx=10,
+        pady=5
+    )
+    edit_macros_button.pack(pady=(0, 5))
+    
+    # Store reference to the button for external access
+    settings_dialog.macros_button = edit_macros_button
+    
     # Add Log Management Section
     log_section = tk.LabelFrame(content_frame, text="Log Management", font=("Arial", 12, "bold"), bg='white', padx=10, pady=10)
     log_section.pack(fill='x', pady=(0, 15))
@@ -525,7 +672,10 @@ def create_settings_dialog(parent, config_manager, update_label_count_callback, 
             reverseinbound_creation_var.get(),  # Add the new reverseinbound_creation setting
             jdl_automation_enabled_var.get(),   # Add the JDL automation enabled setting
             jdl_username_var.get(),             # Add the JDL username
-            jdl_password_var.get()              # Add the JDL password
+            jdl_password_var.get(),             # Add the JDL password
+            scan_url_var.get(),                 # Add the SCAN URL
+            receive_url_var.get(),              # Add the Receive URL
+            exception_base_url_var.get()        # Add the Exception Base URL
         ),
         bg='#4CAF50',
         padx=15,

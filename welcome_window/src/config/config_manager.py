@@ -21,6 +21,10 @@ class Settings:
     jdl_automation_enabled: bool = False  # Setting to enable/disable JDL automation
     jdl_username: Optional[str] = None  # JDL Global IWMS username
     jdl_password: Optional[str] = None  # JDL Global IWMS password
+    # URL Settings
+    scan_url: Optional[str] = ""  # URL for the scan page
+    receive_url: Optional[str] = ""  # URL for the receive functionality
+    exception_base_url: Optional[str] = ""  # Base URL for exceptions
     # Google Sheets settings
     google_sheet_url: Optional[str] = None
     google_sheet_name: Optional[str] = None
@@ -31,6 +35,10 @@ class Settings:
     google_sheet_steps_column: str = "F"  # New setting for Steps value column
     google_sheet_steps_row: int = 3  # New setting for Steps value row
     google_sheets_connection_status: str = "Not Connected"
+    # Receive mode and exceptions mode settings
+    receive_mode: bool = False  # Setting for receive mode
+    exceptions_mode: bool = False  # Setting for exceptions mode
+    take_exception_screenshots: bool = False  # Setting for taking exception screenshots
 
 class ConfigManager:
     """Manages application configuration and settings"""
@@ -75,6 +83,10 @@ class ConfigManager:
                     jdl_automation_enabled=data.get('jdl_automation_enabled', False),  # Load JDL automation setting
                     jdl_username=data.get('jdl_username'),  # Load JDL username
                     jdl_password=data.get('jdl_password'),  # Load JDL password
+                    # URL Settings
+                    scan_url=data.get('scan_url', ''),  # Load scan URL
+                    receive_url=data.get('receive_url', ''),  # Load receive URL
+                    exception_base_url=data.get('exception_base_url', ''),  # Load exception base URL
                     # Google Sheets settings
                     google_sheet_url=data.get('google_sheet_url'),
                     google_sheet_name=data.get('google_sheet_name'),
@@ -84,7 +96,11 @@ class ConfigManager:
                     google_sheet_sku_row=data.get('google_sheet_sku_row', 3),
                     google_sheet_steps_column=data.get('google_sheet_steps_column', 'H'),
                     google_sheet_steps_row=data.get('google_sheet_steps_row', 3),
-                    google_sheets_connection_status=data.get('google_sheets_connection_status', "Not Connected")
+                    google_sheets_connection_status=data.get('google_sheets_connection_status', "Not Connected"),
+                    # Receive mode and exceptions mode settings
+                    receive_mode=data.get('receive_mode', False),  # Load receive mode setting
+                    exceptions_mode=data.get('exceptions_mode', False),  # Load exceptions mode setting
+                    take_exception_screenshots=data.get('take_exception_screenshots', False)  # Load exception screenshots setting
                 )
                 return settings
             except Exception as e:
@@ -104,6 +120,14 @@ class ConfigManager:
         try:
             # Convert settings to dictionary
             settings_dict = asdict(self.settings)
+            
+            # Ensure URL settings are included even if they're empty strings
+            if 'scan_url' not in settings_dict or settings_dict['scan_url'] is None:
+                settings_dict['scan_url'] = ''
+            if 'receive_url' not in settings_dict or settings_dict['receive_url'] is None:
+                settings_dict['receive_url'] = ''
+            if 'exception_base_url' not in settings_dict or settings_dict['exception_base_url'] is None:
+                settings_dict['exception_base_url'] = ''
             
             # Save to file
             with open(self.settings_file, 'w') as f:

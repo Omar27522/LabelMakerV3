@@ -294,9 +294,18 @@ class JDLAutomation:
             config_manager: The application's configuration manager
         """
         self.config_manager = config_manager
+        
+        # Get URLs from settings if available, otherwise use defaults
         self.jdl_url = "https://iwms.us.jdlglobal.com/"
-        # Update the URL to the correct path for creating after-sales orders
-        self.after_sales_url = "https://iwms.us.jdlglobal.com/#/createAfterSalesOrder"
+        
+        # Use the SCAN URL from settings if available
+        if hasattr(self.config_manager.settings, 'scan_url') and self.config_manager.settings.scan_url:
+            self.after_sales_url = self.config_manager.settings.scan_url
+            logger.info(f"Using SCAN URL from settings: {self.after_sales_url}")
+        else:
+            # Default URL for creating after-sales orders
+            self.after_sales_url = "https://iwms.us.jdlglobal.com/#/createAfterSalesOrder"
+            logger.info("Using default SCAN URL")
     
     def open_jdl_site(self):
         """
@@ -428,7 +437,11 @@ class JDLAutomation:
             # If that doesn't work, try alternative formats
             if not result:
                 visual_logger.log("Primary URL failed, trying alternative URLs", "WARNING")
+                # Try alternative URLs if the main one fails
                 alt_urls = [
+                    # First try the configured URL without the hash
+                    self.after_sales_url.replace("#/", ""),
+                    # Then try default URLs
                     "https://iwms.us.jdlglobal.com/#/createAfterSalesOrder",
                     "https://iwms.us.jdlglobal.com/createAfterSalesOrder",
                     "https://iwms.us.jdlglobal.com/#/after-sales-order/create"
@@ -566,21 +579,57 @@ class JDLAutomation:
             # Notify the UI that the tab has been closed
             try:
                 # Find the UI instance to notify
-                # This is a bit of a hack, but it works for simple cases
                 # We need to find the root Tk window and then the CreateLabelFrame instance
                 import tkinter as tk
-                for widget in tk._default_root.winfo_children():
-                    # Look for the CreateLabelFrame instance
-                    if hasattr(widget, 'simulate_close_tab_button_click'):
-                        visual_logger.log("Found UI widget, simulating Close Tab button click", "INFO")
-                        widget.simulate_close_tab_button_click()
-                        break
-                    # It might be nested inside another frame
-                    for child in widget.winfo_children():
-                        if hasattr(child, 'simulate_close_tab_button_click'):
-                            visual_logger.log("Found nested UI widget, simulating Close Tab button click", "INFO")
-                            child.simulate_close_tab_button_click()
-                            break
+                
+                def find_and_notify_widget(parent):
+                    """Recursively search for the CreateLabelFrame widget and notify it"""
+                    # Check if this widget has the method we're looking for
+                    if hasattr(parent, 'simulate_close_tab_button_click'):
+                        visual_logger.log(f"Found UI widget of type {type(parent).__name__}, simulating Close Tab button click", "INFO")
+                        parent.simulate_close_tab_button_click()
+                        return True
+                    
+                    # Check if this widget has the close_tab_button attribute directly
+                    if hasattr(parent, 'close_tab_button'):
+                        visual_logger.log(f"Found widget with close_tab_button, hiding it directly", "INFO")
+                        # Use after to ensure it runs on the main thread
+                        parent.after(0, lambda: parent.close_tab_button.pack_forget())
+                        # Also try to enable and focus the SKU field
+                        if hasattr(parent, 'field_widgets') and "SKU:" in parent.field_widgets:
+                            parent.after(0, lambda: parent.field_widgets["SKU:"]["widget"].config(state="normal"))
+                            parent.after(0, lambda: parent.field_widgets["SKU:"]["widget"].focus_set())
+                        # Update status message if possible
+                        if hasattr(parent, '_update_status'):
+                            parent.after(0, lambda: parent._update_status("Browser tab automatically closed. Continue with SKU entry.", 'green'))
+                        return True
+                    
+                    # Search all children
+                    for child in parent.winfo_children():
+                        if find_and_notify_widget(child):
+                            return True
+                    
+                    return False
+                
+                # Start the search from the root window
+                if hasattr(tk, '_default_root') and tk._default_root is not None:
+                    visual_logger.log("Searching for CreateLabelFrame in widget hierarchy", "INFO")
+                    if not find_and_notify_widget(tk._default_root):
+                        visual_logger.log("Could not find CreateLabelFrame widget in main hierarchy", "WARNING")
+                        
+                        # As a fallback, try to directly find and hide any close_tab_button in the UI
+                        def find_close_tab_button(parent):
+                            """Find any widget named close_tab_button"""
+                            for child in parent.winfo_children():
+                                if child.winfo_name() == 'close_tab_button':
+                                    visual_logger.log(f"Found close_tab_button by name, hiding it", "INFO")
+                                    child.pack_forget()
+                                    return True
+                                if find_close_tab_button(child):
+                                    return True
+                            return False
+                        
+                        find_close_tab_button(tk._default_root)
             except Exception as e:
                 visual_logger.log(f"Could not notify UI of tab closure: {str(e)}", "WARNING")
                 # This is not critical, so we can continue even if it fails
@@ -602,51 +651,53 @@ class JDLAutomation:
             tracking_numbers: List of tracking numbers to process
             
         Returns:
-            tuple: (success_count, failed_tracking_numbers)
+            tuple: (Number of successful tracking numbers, List of failed tracking numbers)
         """
-        # Make sure visual logger is visible
-        visual_logger.show()
-        
-        if not tracking_numbers:
-            visual_logger.log("No tracking numbers to process", "WARNING")
-            return 0, []
-            
-        visual_logger.log(f"Processing {len(tracking_numbers)} tracking number(s)", "INFO")
-        
-        # For multiple tracking numbers, we have two options:
-        # 1. Process them one by one automatically (new approach)
-        # 2. Just open the page and show instructions (old approach)
         if len(tracking_numbers) > 1:
-            # Check if we should process them automatically one by one
-            auto_process = True  # Set to True to enable automatic processing of multiple tracking numbers
+            # Multiple tracking numbers
+            visual_logger.log(f"Processing {len(tracking_numbers)} tracking numbers", "INFO")
             
-            if auto_process:
-                visual_logger.log(f"Automatically processing {len(tracking_numbers)} tracking numbers one by one", "INFO")
+            # Ask user if they want to process them one by one or all at once
+            import tkinter.messagebox as messagebox
+            result = messagebox.askyesno(
+                "Process Multiple Tracking Numbers", 
+                f"You have {len(tracking_numbers)} tracking numbers to process.\n\n"
+                f"Do you want to process them one by one?\n\n"
+                f"Click 'Yes' to process one by one.\n"
+                f"Click 'No' to copy all to clipboard and process manually."
+            )
+            
+            if result:  # Process one by one
+                visual_logger.log("Processing tracking numbers one by one", "INFO")
                 
                 success_count = 0
-                failed_numbers = []
+                failed_tracking_numbers = []
                 
-                for idx, tracking_number in enumerate(tracking_numbers):
-                    visual_logger.log(f"Processing tracking number {idx+1}/{len(tracking_numbers)}: {tracking_number}", "INFO")
+                for tracking_number in tracking_numbers:
+                    visual_logger.log(f"Processing tracking number: {tracking_number}", "INFO")
                     
-                    # Process this tracking number
                     if self.process_tracking_number(tracking_number):
                         success_count += 1
                     else:
-                        failed_numbers.append(tracking_number)
-                    
-                    # Add a delay between processing tracking numbers
-                    if idx < len(tracking_numbers) - 1:  # Don't delay after the last one
-                        visual_logger.log("Waiting before processing next tracking number...", "INFO")
-                        time.sleep(2)  # Wait between tracking numbers
+                        failed_tracking_numbers.append(tracking_number)
+                        
+                    # Ask if user wants to continue after each one (except the last one)
+                    if tracking_number != tracking_numbers[-1]:
+                        continue_result = messagebox.askyesno(
+                            "Continue Processing", 
+                            f"Processed {success_count} of {len(tracking_numbers)} tracking numbers.\n"
+                            f"{len(failed_tracking_numbers)} have failed.\n\n"
+                            f"Do you want to continue with the next tracking number?"
+                        )
+                        
+                        if not continue_result:
+                            visual_logger.log("User chose to stop processing tracking numbers", "INFO")
+                            break
                 
-                # Return the results
-                return success_count, failed_numbers
-            else:
-                # Use the original approach for multiple tracking numbers
+                visual_logger.log(f"Finished processing tracking numbers. Success: {success_count}, Failed: {len(failed_tracking_numbers)}", "INFO")
+                return success_count, failed_tracking_numbers
+            else:  # Copy all to clipboard
                 try:
-                    visual_logger.log(f"Multiple tracking numbers detected: {len(tracking_numbers)}", "INFO")
-                    
                     if not self.open_after_sales_order_page():
                         visual_logger.log("Failed to open After Sales Order page", "ERROR")
                         return 0, tracking_numbers
@@ -683,108 +734,187 @@ class JDLAutomation:
             else:
                 visual_logger.log(f"Failed to process tracking number: {tracking_numbers[0]}", "ERROR")
                 return 0, tracking_numbers
-                
-    def close(self):
-        """
-        Close the browser tab and reset the browser_tab_open flag.
-        This allows the next tracking number to open a fresh tab.
-        """
+            
+def close(self):
+    """
+    Close the browser tab and reset the browser_tab_open flag.
+    This allows the next tracking number to open a fresh tab.
+    
+    Returns:
+        bool: True if the tab was successfully closed, False otherwise
+    """
+    try:
+        # Get the browser that was used to open the tab
+        browser_name = JDLAutomation.browser_used
+        visual_logger.log(f"Detected browser: {browser_name if browser_name else 'unknown'}", "INFO")
+        
+        # Only attempt to close if we believe a tab is open
+        if not JDLAutomation.browser_tab_open:
+            visual_logger.log("No browser tab is currently tracked as open", "INFO")
+            return True
+        
+        # Automatically close the browser tab without asking
+        visual_logger.log("Attempting to close browser tab...", "INFO")
+        
+        close_success = False
         try:
-            # Get the browser that was used to open the tab
-            browser_name = JDLAutomation.browser_used
-            visual_logger.log(f"Detected browser: {browser_name if browser_name else 'unknown'}", "INFO")
-            
-            # Reset the browser tab tracking flag
-            JDLAutomation.browser_tab_open = False
-            visual_logger.log("Browser tab tracking reset - next tracking number will open a new tab", "INFO")
-            
-            # Automatically close the browser tab without asking
-            visual_logger.log("Attempting to close browser tab...", "INFO")
-            
-            try:
-                # For Windows, use browser-specific approach when possible
-                if platform.system() == "Windows":
-                    # First, try to focus the specific browser if we know which one was used
-                    browser_focused = False
-                    
-                    if browser_name and browser_name != "unknown":
-                        # Try to focus the specific browser process
-                        ps_focus_browser = [
-                            'powershell', '-Command',
-                            r'''
-                            $browserName = "''' + browser_name + r'''"
-                            $processes = Get-Process -Name $browserName -ErrorAction SilentlyContinue
-                            
-                            if ($processes) {
-                                # Try to focus the browser window
-                                Add-Type @"
-                                    using System;
-                                    using System.Runtime.InteropServices;
-                                    public class WindowHelper {
-                                        [DllImport("user32.dll")]
-                                        [return: MarshalAs(UnmanagedType.Bool)]
-                                        public static extern bool SetForegroundWindow(IntPtr hWnd);
-                                    }
+            # For Windows, use browser-specific approach when possible
+            if platform.system() == "Windows":
+                # First, try to focus the specific browser if we know which one was used
+                browser_focused = False
+                
+                if browser_name and browser_name != "unknown":
+                    # Try to focus the specific browser process
+                    ps_focus_browser = [
+                        'powershell', '-Command',
+                        r'''
+                        $browserName = "''' + browser_name + r'''"
+                        $processes = Get-Process -Name $browserName -ErrorAction SilentlyContinue
+                        
+                        if ($processes) {
+                            # Try to focus the browser window
+                            Add-Type @"
+                                using System;
+                                using System.Runtime.InteropServices;
+                                public class WindowHelper {
+                                    [DllImport("user32.dll")]
+                                    [return: MarshalAs(UnmanagedType.Bool)]
+                                    public static extern bool SetForegroundWindow(IntPtr hWnd);
+                                }
 "@
-                                
-                                # Focus the main window of the first process
-                                [WindowHelper]::SetForegroundWindow($processes[0].MainWindowHandle)
-                                $true
-                            } else {
-                                $false
-                            }
-                            '''
-                        ]
-                        
-                        result = subprocess.run(ps_focus_browser, capture_output=True, text=True, check=False)
-                        browser_focused = result.stdout.strip().lower() == 'true'
-                        
-                        if browser_focused:
-                            visual_logger.log(f"Successfully focused {browser_name} browser", "SUCCESS")
-                        else:
-                            visual_logger.log(f"Could not focus {browser_name} browser, trying alternative method", "WARNING")
+                            
+                            # Focus the main window of the first process
+                            [WindowHelper]::SetForegroundWindow($processes[0].MainWindowHandle)
+                            $true
+                        } else {
+                            $false
+                        }
+                        '''
+                    ]
                     
-                    # If we couldn't focus the specific browser, try Alt+Tab as a fallback
-                    if not browser_focused:
-                        visual_logger.log("Using Alt+Tab to switch to the browser", "INFO")
-                        # Use Alt+Tab to switch to the previous window (likely the browser)
-                        subprocess.run([
-                            'powershell', '-Command',
-                            '(New-Object -ComObject WScript.Shell).SendKeys("%{TAB}")'
-                        ], check=False)
+                    result = subprocess.run(ps_focus_browser, capture_output=True, text=True, check=False)
+                    browser_focused = result.stdout.strip().lower() == 'true'
                     
-                    # Give a small delay for the window to get focus
-                    time.sleep(0.5)
-                    
-                    # Now try to close the tab with the appropriate shortcut
-                    # Ctrl+W works in all major browsers
+                    if browser_focused:
+                        visual_logger.log(f"Successfully focused {browser_name} browser", "SUCCESS")
+                    else:
+                        visual_logger.log(f"Could not focus {browser_name} browser, trying alternative method", "WARNING")
+                
+                # If we couldn't focus the specific browser, try Alt+Tab as a fallback
+                if not browser_focused:
+                    visual_logger.log("Using Alt+Tab to switch to the browser", "INFO")
+                    # Use Alt+Tab to switch to the previous window (likely the browser)
                     subprocess.run([
                         'powershell', '-Command',
-                        '(New-Object -ComObject WScript.Shell).SendKeys("^w")'
+                        '(New-Object -ComObject WScript.Shell).SendKeys("%{TAB}")'
                     ], check=False)
-                    
-                    visual_logger.log("Sent command to close the browser tab", "SUCCESS")
-                    
-                    # Wait a moment, then Alt+Tab back to our application if we used Alt+Tab before
-                    if not browser_focused:
-                        time.sleep(0.5)
-                        subprocess.run([
-                            'powershell', '-Command',
-                            '(New-Object -ComObject WScript.Shell).SendKeys("%{TAB}")'
-                        ], check=False)
-                else:
-                    # For other platforms, just inform the user
-                    visual_logger.log("Please close the browser tab manually", "INFO")
-                    
-            except Exception as e:
-                visual_logger.log(f"Could not automatically close tab: {str(e)}", "WARNING")
+                
+                # Give a small delay for the window to get focus
+                time.sleep(0.5)
+                
+                # Now try to close the tab with the appropriate shortcut
+                # Ctrl+W works in all major browsers
+                subprocess.run([
+                    'powershell', '-Command',
+                    '(New-Object -ComObject WScript.Shell).SendKeys("^w")'
+                ], check=False)
+                
+                visual_logger.log("Sent command to close the browser tab", "SUCCESS")
+                close_success = True
+                
+                # Wait a moment, then Alt+Tab back to our application if we used Alt+Tab before
+                if not browser_focused:
+                    time.sleep(0.5)
+                    subprocess.run([
+                        'powershell', '-Command',
+                        '(New-Object -ComObject WScript.Shell).SendKeys("%{TAB}")'
+                    ], check=False)
+            else:
+                # For other platforms, just inform the user
                 visual_logger.log("Please close the browser tab manually", "INFO")
+                close_success = True  # Assume success on non-Windows platforms
                 
         except Exception as e:
-            error_msg = f"Error in close method: {str(e)}"
-            logger.error(error_msg)
-            visual_logger.log(error_msg, "ERROR")
-
+            visual_logger.log(f"Could not automatically close tab: {str(e)}", "WARNING")
+            visual_logger.log("Please close the browser tab manually", "INFO")
+            close_success = False
+        
+        # Reset the browser tab tracking flag regardless of success
+        # This ensures the UI will update properly even if the tab close was not perfect
+        JDLAutomation.browser_tab_open = False
+        visual_logger.log("Browser tab tracking reset - next tracking number will open a new tab", "INFO")
+        
+        # Notify any UI components that might be waiting for tab closure
+        # This is important for ensuring buttons are properly hidden
+        try:
+            # Import tkinter here to avoid circular imports
+            import tkinter as tk
+            from tkinter import Event
+            
+            # Find all CreateLabelFrame instances and directly update them
+            def find_create_label_frames(widget):
+                frames = []
+                if widget.__class__.__name__ == "CreateLabelFrame":
+                    frames.append(widget)
+                for child in widget.winfo_children():
+                    frames.extend(find_create_label_frames(child))
+                return frames
+            
+            if tk._default_root:
+                # Find all CreateLabelFrame instances
+                create_label_frames = find_create_label_frames(tk._default_root)
+                
+                for frame in create_label_frames:
+                    # Directly hide the Close Tab button
+                    if hasattr(frame, 'close_tab_button'):
+                        visual_logger.log(f"Directly hiding Close Tab button in {frame.__class__.__name__}", "INFO")
+                        frame.after(0, lambda f=frame: f.close_tab_button.pack_forget())
+                        frame.after(100, lambda f=frame: f.close_tab_button.pack_forget())
+                        frame.after(500, lambda f=frame: f.close_tab_button.pack_forget())
+                        
+                        # Enable the SKU field
+                        if hasattr(frame, 'field_widgets') and "SKU:" in frame.field_widgets:
+                            frame.after(0, lambda f=frame: f.field_widgets["SKU:"]["widget"].config(state="normal"))
+                            frame.after(100, lambda f=frame: f.field_widgets["SKU:"]["widget"].focus_set())
+                
+                # Also send the event for backward compatibility
+                for widget in tk._default_root.winfo_children():
+                    widget.event_generate("<<BrowserTabClosed>>", when="tail")
+                
+                visual_logger.log("Directly updated UI components and notified about tab closure", "INFO")
+        except Exception as notify_error:
+            visual_logger.log(f"Could not update UI about tab closure: {str(notify_error)}", "WARNING")
+            
+        # Also simulate a click on the Close Tab button if it exists
+        try:
+            # Search for CreateLabelFrame in widget hierarchy
+            visual_logger.log("Searching for CreateLabelFrame in widget hierarchy", "INFO")
+            import tkinter as tk
+            
+            def find_create_label_frame(widget):
+                if widget.__class__.__name__ == "CreateLabelFrame":
+                    return widget
+                for child in widget.winfo_children():
+                    result = find_create_label_frame(child)
+                    if result:
+                        return result
+                return None
+            
+            if tk._default_root:
+                frame = find_create_label_frame(tk._default_root)
+                if frame and hasattr(frame, 'simulate_close_tab_button_click'):
+                    visual_logger.log(f"Found UI widget of type {frame.__class__.__name__}, simulating Close Tab button click", "INFO")
+                    frame.after(0, frame.simulate_close_tab_button_click)
+        except Exception as e:
+            visual_logger.log(f"Error simulating Close Tab button click: {str(e)}", "WARNING")
+            
+        return close_success
+            
+    except Exception as e:
+        error_msg = f"Error in close method: {str(e)}"
+        logger.error(error_msg)
+        visual_logger.log(error_msg, "ERROR")
+        return False
 
 def create_after_sales_orders(config_manager, tracking_numbers, username=None, password=None):
     """

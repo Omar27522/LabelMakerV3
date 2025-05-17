@@ -57,7 +57,6 @@ class CreateLabelFrame(tk.Frame):
         super().__init__(parent, bg='white')
         self.return_to_welcome_callback = return_to_welcome_callback
         self.config_manager = config_manager
-        self.update_label_count_callback = update_label_count_callback
         
         # Initialize variables
         self.tracking_var = tk.StringVar()
@@ -68,6 +67,13 @@ class CreateLabelFrame(tk.Frame):
         self.transparency_var = tk.BooleanVar(value=config_manager.settings.transparency_enabled if hasattr(config_manager.settings, 'transparency_enabled') else True)
         self.receive_mode_var = tk.BooleanVar(value=config_manager.settings.receive_mode if hasattr(config_manager.settings, 'receive_mode') else True)  # Receive mode enabled by default
         self.exceptions_mode_var = tk.BooleanVar(value=config_manager.settings.exceptions_mode if hasattr(config_manager.settings, 'exceptions_mode') else False)  # Exceptions mode disabled by default
+        
+        # Initialize browser state tracking variables
+        self._last_browser_launch_time = None
+        self._last_focus_out_time = None
+        self._browser_was_open = False
+        self._browser_check_interval = 500  # Check every 500ms for more responsive detection
+        self._last_alt_tab_time = None
         
         # Load saved settings if available
         if hasattr(self.config_manager.settings, 'receive_mode'):
@@ -81,15 +87,32 @@ class CreateLabelFrame(tk.Frame):
             if self.stay_on_top_var.get():
                 self.winfo_toplevel().attributes('-topmost', True)
         
+        # Store the callback for updating label count
+        self.update_label_count_callback = update_label_count_callback
+        
         # Create the UI elements
         self._create_ui()
         
-        # Start periodic check for browser tab state
-        self._start_browser_tab_check()
+        # Initialize the disabled print state if needed
+        if not self.print_enabled_var.get():
+            self._initialize_disabled_print_state()
         
-        # Bind to the custom browser tab events
-        self.bind_all("<<BrowserTabClosed>>", self._on_browser_tab_closed)
+        # Set focus to the tracking number field
+        self._focus_tracking_field()
+        
+        # Set up a timer to check browser tab state (more frequently for better responsiveness)
+        self.after(self._browser_check_interval, self._check_browser_tab_state)
+        
+        # Register event handlers for browser tab state changes and window focus
         self.bind_all("<<BrowserTabOpened>>", self._on_browser_tab_opened)
+        self.bind_all("<<BrowserTabClosed>>", self._on_browser_tab_closed)
+        self.winfo_toplevel().bind("<FocusIn>", self._on_focus_in)
+        self.winfo_toplevel().bind("<FocusOut>", self._on_focus_out)
+        
+        # Register keyboard event handlers for Alt+Tab detection
+        self.bind_all("<Alt-KeyPress>", self._on_alt_press)
+        self.bind_all("<Alt-KeyRelease>", self._on_alt_release)
+        self.bind_all("<Tab>", self._on_tab_press)
         
         # Initialize transparency manager
         self.transparency_manager = TransparencyManager(
@@ -1228,46 +1251,64 @@ class CreateLabelFrame(tk.Frame):
             
     def _close_browser_tab(self):
         """
-        Close the browser tab and enable the SKU field.
-        This method is called when the user clicks the 'Close Tab' button.
+        Close the browser tab and reset the UI state
         """
         try:
-            # Get the JDL automation instance
-            jdl = JDLAutomation.get_instance(self.config_manager)
+            logging.info("Close Tab button clicked")
             
-            # Reset the browser tab state directly
-            JDLAutomation.browser_tab_open = False
-            logging.info("Reset browser_tab_open flag to False")
+            # Import JDL automation and close the tab
+            try:
+                from src.utils.jdl_automation import JDLAutomation, close
+                
+                # First, hide the Close Tab button to provide visual feedback
+                self._hide_close_tab_button()
+                
+                # Update status to let user know we're processing
+                self._update_status("Closing browser tab and running final macro steps...", 'blue')
+                
+                # Set the flag to indicate browser tab is being closed
+                JDLAutomation.browser_tab_open = False
+                logging.info("Reset browser_tab_open flag to False")
+                
+                # Call the close function to close the browser tab and run any final macro steps
+                close_success = close()
+                logging.info(f"Browser tab close operation completed with success={close_success}")
+                
+                # Only after the close operation is complete, enable the SKU field
+                if "SKU:" in self.field_widgets:
+                    self.field_widgets["SKU:"]["widget"].config(state="normal")
+                    self.field_widgets["SKU:"]["widget"].focus_set()
+                    logging.info("Enabled SKU field after macro completion")
+                
+                # Update status to confirm completion
+                self._update_status("Browser tab closed. Continue with SKU entry.", 'green')
+                
+                # Notify all components that the browser tab is closed
+                self.event_generate("<<BrowserTabClosed>>", when="tail")
+                
+            except ImportError:
+                logging.error("Could not import JDL automation module")
+                self._update_status("Error closing browser tab: JDL automation module not found", 'red')
+                
+                # Even in case of import error, still enable the SKU field as a fallback
+                if "SKU:" in self.field_widgets:
+                    self.field_widgets["SKU:"]["widget"].config(state="normal")
+                
+            except Exception as e:
+                logging.error(f"Error closing browser tab: {str(e)}")
+                self._update_status(f"Error closing browser tab: {str(e)}", 'red')
+                
+                # Even in case of error, still enable the SKU field as a fallback
+                if "SKU:" in self.field_widgets:
+                    self.field_widgets["SKU:"]["widget"].config(state="normal")
+                
+        except Exception as e:
+            logging.error(f"Error in _close_browser_tab: {str(e)}")
             
-            # Hide the Close Tab button
-            logging.info("Hiding the Close Tab button")
-            self._hide_close_tab_button()
-            
-            # Enable the SKU field
+            # Final fallback to ensure SKU field is enabled
             if "SKU:" in self.field_widgets:
                 self.field_widgets["SKU:"]["widget"].config(state="normal")
-                self.field_widgets["SKU:"]["widget"].focus_set()
-                logging.info("Enabled SKU field")
-            
-            # Update status
-            self._update_status("Browser tab closed. Continue with SKU entry.", 'green')
-            
-            # Bring the window to the front and force focus
-            self.winfo_toplevel().lift()
-            self.winfo_toplevel().focus_force()
-            
-            # Actually close the browser tab (do this after UI updates)
-            try:
-                close_success = jdl.close()
-                if not close_success:
-                    logging.warning("Browser tab close operation reported failure but UI is already updated")
-            except Exception as close_error:
-                logging.error(f"Error in actual tab close operation: {str(close_error)}")
-            
-        except Exception as e:
-            error_msg = str(e)
-            self._update_status(f"Error in tab close handler: {error_msg}", 'red')
-            logging.error(f"Error in tab close handler: {error_msg}")
+
             
             # Still enable the SKU field in case of error
             if "SKU:" in self.field_widgets:
@@ -1350,58 +1391,28 @@ class CreateLabelFrame(tk.Frame):
     
     def _on_browser_tab_closed(self, event=None):
         """
-        Handle the custom BrowserTabClosed event.
-        This is triggered when JDLAutomation closes a browser tab.
+        Handle the browser tab closed event
         
         Args:
-            event: The event object (not used)
-        """
-        logging.info("Received BrowserTabClosed event - hiding Close Tab button")
-        try:
-            # Hide the Close Tab button
-            if hasattr(self, 'close_tab_button'):
-                self.close_tab_button.pack_forget()
-                logging.info("Close Tab button hidden due to BrowserTabClosed event")
-            
-            # Enable the SKU field
-            if "SKU:" in self.field_widgets:
-                self.field_widgets["SKU:"]["widget"].config(state="normal")
-                self.field_widgets["SKU:"]["widget"].focus_set()
-                logging.info("SKU field enabled due to BrowserTabClosed event")
-                
-            # Update status
-            self._update_status("Browser tab closed. Continue with SKU entry.", 'green')
+            from src.utils.jdl_automation import JDLAutomation
+            JDLAutomation.browser_tab_open = False
+            logging.info("Reset JDLAutomation.browser_tab_open flag to False")
         except Exception as e:
-            logging.error(f"Error handling BrowserTabClosed event: {str(e)}")
+            logging.error(f"Error updating JDL automation state: {str(e)}")
             
-    def _on_browser_tab_opened(self, event=None):
-        """
-        Handle the custom BrowserTabOpened event.
-        This is triggered when a browser tab is opened, especially in Receive mode.
-        
-        Args:
-            event: The event object (not used)
-        """
-        logging.info("Received BrowserTabOpened event - showing Close Tab button")
-        try:
-            # Show the Close Tab button but make it non-clickable
-            self._show_close_tab_button_as_indicator()
-            
-            # Disable the SKU field while the browser tab is open
-            if "SKU:" in self.field_widgets:
-                self.field_widgets["SKU:"]["widget"].config(state="disabled")
-                logging.info("SKU field disabled while browser tab is open")
-                
-            # Update status
-            self._update_status("Browser tab opened. Wait for processing to complete.", 'blue')
-        except Exception as e:
-            logging.error(f"Error handling BrowserTabOpened event: {str(e)}")
-            
-    def _show_close_tab_button_as_indicator(self):
-        """
-        Show the Close Tab button as a non-clickable indicator that a browser tab is open.
-        """
-        try:
+    except Exception as e:
+        logging.error(f"Error in _on_browser_tab_closed: {str(e)}")
+
+
+def _force_focus_on_sku_field(self):
+    """
+    Force focus on the SKU field using multiple techniques to ensure it gets focus
+    This is called after browser tab is closed to ensure the SKU field is ready for input
+    """
+    try:
+        if "SKU:" in self.field_widgets:
+            # Get the SKU widget
+            sku_widget = self.field_widgets["SKU:"]["widget"]
             if hasattr(self, 'close_tab_button'):
                 logging.info("Showing Close Tab button as non-clickable indicator")
                 # Make the button visible
@@ -1437,6 +1448,85 @@ class CreateLabelFrame(tk.Frame):
         logging.info("Starting periodic browser tab state check")
         self._check_browser_tab_state()
         
+    def _is_browser_with_our_url_running(self):
+        """
+        Check if any browser is running with our specific URL
+        Returns True if a browser with our URL is detected, False otherwise
+        """
+        try:
+            # On Windows, use a sophisticated approach to detect browser tabs
+            if platform.system() == "Windows":
+                import subprocess
+                import psutil
+                
+                # Get the URLs from settings
+                scan_url = getattr(self.config_manager.settings, 'scan_url', '')
+                receive_url = getattr(self.config_manager.settings, 'receive_url', '')
+                
+                # Extract the domain parts for more reliable matching
+                domains_to_check = []
+                for url in [scan_url, receive_url]:
+                    if url:
+                        try:
+                            from urllib.parse import urlparse
+                            parsed = urlparse(url)
+                            domain = parsed.netloc
+                            if domain:
+                                domains_to_check.append(domain)
+                        except Exception as e:
+                            logging.debug(f"Error parsing URL {url}: {str(e)}")
+                
+                # If no domains found, add default domain
+                if not domains_to_check:
+                    domains_to_check.append("iwms.us.jdlglobal.com")
+                
+                # Check for browser processes with connections to our domains
+                for proc in psutil.process_iter(['pid', 'name', 'connections']):
+                    try:
+                        # Check if it's a browser
+                        proc_name = proc.info['name'].lower() if proc.info['name'] else ''
+                        if any(b in proc_name for b in ['chrome', 'firefox', 'msedge', 'iexplore', 'opera']):
+                            # Check its network connections
+                            if proc.info['connections']:
+                                for conn in proc.info['connections']:
+                                    if conn.status == 'ESTABLISHED':
+                                        # Check if connected to our domains
+                                        remote_addr = conn.raddr.ip if hasattr(conn.raddr, 'ip') else ''
+                                        if any(domain in remote_addr for domain in domains_to_check):
+                                            logging.debug(f"Detected browser {proc_name} connected to our domain")
+                                            return True
+                    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                        pass
+                    except Exception as e:
+                        logging.debug(f"Error checking process connections: {str(e)}")
+                
+                # If no connections found, do a more basic check for recently launched browsers
+                if hasattr(self, '_last_browser_launch_time'):
+                    # Check if any browser is running at all and was recently launched by us
+                    browsers = ["chrome.exe", "firefox.exe", "msedge.exe", "iexplore.exe", "opera.exe"]
+                    for browser in browsers:
+                        try:
+                            # Use tasklist to check if browser is running
+                            result = subprocess.run(
+                                ["tasklist", "/FI", f"IMAGENAME eq {browser}"],
+                                capture_output=True,
+                                text=True,
+                                check=False
+                            )
+                            if browser.lower() in result.stdout.lower():
+                                # If browser was recently launched by us, assume it's still our tab
+                                if (datetime.datetime.now() - self._last_browser_launch_time).total_seconds() < 60:  # 1 minute
+                                    logging.debug(f"Detected recently launched browser: {browser}")
+                                    return True
+                        except Exception as e:
+                            logging.debug(f"Error checking for browser {browser}: {str(e)}")
+            
+            # No browser with our URL was found
+            return False
+        except Exception as e:
+            logging.error(f"Error in _is_browser_with_our_url_running: {str(e)}")
+            return False
+            
     def _check_browser_tab_state(self):
         """
         Periodically check if a browser tab is open and update UI elements accordingly.
@@ -1446,32 +1536,9 @@ class CreateLabelFrame(tk.Frame):
             # Get JDL automation instance
             jdl = JDLAutomation.get_instance(self.config_manager)
             
-            # Check if a browser tab is actually open using a platform-specific approach
-            browser_open = False
-            
-            # On Windows, try to detect if any of the common browsers are running with our URL
-            if platform.system() == "Windows":
-                import subprocess
-                import re
-                
-                # Check for common browsers with our URL
-                browsers = ["chrome", "firefox", "msedge", "iexplore", "opera"]
-                for browser in browsers:
-                    try:
-                        # Use tasklist to check if browser is running
-                        result = subprocess.run(
-                            ["tasklist", "/FI", f"IMAGENAME eq {browser}.exe"],
-                            capture_output=True,
-                            text=True,
-                            check=False
-                        )
-                        if browser in result.stdout.lower():
-                            logging.debug(f"Detected running browser: {browser}")
-                            browser_open = True
-                            break
-                    except Exception as e:
-                        logging.debug(f"Error checking for browser {browser}: {str(e)}")
-            
+            # Check if a browser tab is actually open using our helper method
+            browser_open = self._is_browser_with_our_url_running()
+        
             # Update UI based on actual browser state
             if browser_open:
                 # Browser is open, show the button as a non-clickable indicator
@@ -1496,11 +1563,11 @@ class CreateLabelFrame(tk.Frame):
                         if "SKU:" in self.field_widgets:
                             self.field_widgets["SKU:"]["widget"].config(state="normal")
                             self.field_widgets["SKU:"]["widget"].focus_set()
-                
-                # Also update JDL automation state to match reality
-                if hasattr(jdl, 'browser_tab_open') and jdl.browser_tab_open:
-                    jdl.browser_tab_open = False
-                    logging.info("Updated JDL automation state to match reality (no browser tab open)")
+            
+            # Also update JDL automation state to match reality
+            if hasattr(jdl, 'browser_tab_open') and jdl.browser_tab_open:
+                jdl.browser_tab_open = False
+                logging.info("Updated JDL automation state to match reality (no browser tab open)")
         except Exception as e:
             logging.error(f"Error in _check_browser_tab_state: {str(e)}")
         
@@ -1600,35 +1667,79 @@ class CreateLabelFrame(tk.Frame):
                 from src.utils.receive import ReceiveManager
                 receive_manager = ReceiveManager.get_instance(self.config_manager)
                 
-                # Directly open the JDL scan page
-                logging.info("Directly opening JDL scan page")
-                self._update_status("Opening JDL scan page...", 'blue')
+                # Check if we need to open a new browser tab or if one is already open
+                from src.utils.jdl_automation import JDLAutomation
+                browser_already_open = getattr(JDLAutomation, 'browser_tab_open', False)
                 
-                # Open the scan page
-                success = receive_manager.open_jdl_scan_page()
-                if success:
-                    self._update_status("JDL scan page opened successfully", 'green')
-                    logging.info("JDL scan page opened successfully")
+                if not browser_already_open:
+                    # Directly open the JDL scan page if not already open
+                    logging.info("Opening JDL scan page for receive operation")
+                    self._update_status("Opening JDL scan page...", 'blue')
+                    
+                    # Open the scan page - use receive_url instead of scan_url
+                    success = receive_manager.open_jdl_scan_page()
+                    if success:
+                        self._update_status("JDL scan page opened successfully", 'green')
+                        logging.info("JDL scan page opened successfully")
+                        
+                        # Show the Close Tab button
+                        self._ensure_close_tab_button_visible()
+                    else:
+                        self._update_status("Failed to open JDL scan page", 'red')
+                        logging.error("Failed to open JDL scan page")
+                        return
                 else:
-                    self._update_status("Failed to open JDL scan page", 'red')
-                    logging.error("Failed to open JDL scan page")
+                    logging.info("Browser tab already open, using existing tab for receive operation")
+                    self._update_status("Using existing browser tab for receive operation", 'blue')
                 
-                # Define the automation function
+                # Define the automation function with improved timing and state management
                 def run_automation():
                     try:
-                        # Wait a moment for the first automation process to complete
-                        logging.info("Waiting for first automation process to complete...")
-                        self.after(0, lambda: self._update_status("Waiting for first automation to complete...", 'blue'))
+                        # Wait for the browser to fully load - use a more reliable approach than fixed sleep
                         import time
-                        time.sleep(3)  # Give the first automation process time to finish
+                        max_wait_time = 10  # Maximum seconds to wait
+                        wait_interval = 0.5  # Check every half second
                         
-                        logging.info("Starting JDL scan automation process")
-                        self.after(0, lambda: self._update_status("Starting JDL scan automation process...", 'blue'))
+                        # Update status to show we're waiting for the browser
+                        logging.info("Waiting for browser to be ready...")
+                        self.after(0, lambda: self._update_status("Waiting for browser to be ready...", 'blue'))
+                        
+                        # Dynamic wait for browser readiness
+                        browser_ready = False
+                        start_time = time.time()
+                        
+                        while (time.time() - start_time) < max_wait_time:
+                            # Check if browser is ready using a simple heuristic
+                            # We'll use the browser_tab_open flag as a proxy
+                            if getattr(JDLAutomation, 'browser_tab_open', False):
+                                browser_ready = True
+                                break
+                            time.sleep(wait_interval)
+                        
+                        if not browser_ready:
+                            logging.warning("Browser may not be fully ready, but proceeding with automation")
+                        
+                        # Log that we're starting the JDL scan automation
+                        logging.info("Starting JDL scan automation process for receive operation")
+                        self.after(0, lambda: self._update_status("Starting JDL scan automation...", 'blue'))
                         
                         # Log the values we'll be using
                         logging.info(f"Will use tracking number: {self.current_tracking}")
                         logging.info(f"Will use container card: {container_card}")
                         logging.info(f"Will use SKU: {self.current_sku}")
+                        
+                        # Make sure we have all required values
+                        if not hasattr(self, 'current_tracking') or not self.current_tracking:
+                            error_msg = "Missing tracking number for receive operation"
+                            logging.error(error_msg)
+                            self.after(0, lambda: self._update_status(error_msg, 'red'))
+                            return
+                        
+                        if not hasattr(self, 'current_sku') or not self.current_sku:
+                            error_msg = "Missing SKU for receive operation"
+                            logging.error(error_msg)
+                            self.after(0, lambda: self._update_status(error_msg, 'red'))
+                            return
                         
                         # Define a callback function to handle specific errors
                         def error_callback(error_type, sku):
@@ -1653,6 +1764,9 @@ class CreateLabelFrame(tk.Frame):
                         elif result:
                             self.after(0, lambda: self._update_status("JDL scan automation completed successfully", 'green'))
                             logging.info("JDL scan automation completed successfully")
+                            
+                            # Clear fields after successful completion
+                            self.after(0, self._clear_fields)
                         else:
                             self.after(0, lambda: self._update_status("JDL scan automation failed", 'red'))
                             logging.error("JDL scan automation failed")
@@ -1660,10 +1774,11 @@ class CreateLabelFrame(tk.Frame):
                         error_msg = str(e)
                         logging.error(f"Error in JDL scan automation: {error_msg}")
                         self.after(0, lambda: self._update_status(f"Error in JDL scan automation: {error_msg}", 'red'))
-                
+            
                 # Run the automation in a separate thread
                 import threading
-                threading.Thread(target=run_automation, daemon=True).start()
+                automation_thread = threading.Thread(target=run_automation, daemon=True)
+                automation_thread.start()
                 logging.info("Started JDL scan automation thread")
             
             except Exception as e:
@@ -1771,6 +1886,10 @@ class CreateLabelFrame(tk.Frame):
             password: JDL password
         """
         try:
+            # Record the time when we launched the browser
+            self._last_browser_launch_time = datetime.datetime.now()
+            self._browser_was_open = True
+            
             # Import the visual logger here to ensure it's available
             try:
                 from src.utils.jdl_automation import visual_logger
@@ -1814,6 +1933,6 @@ class CreateLabelFrame(tk.Frame):
             # This is needed regardless of whether receive mode is enabled or not
             self.after(0, self._ensure_close_tab_button_visible)
             
-            # Set a timeout to automatically hide the button if it's not clicked within a reasonable time
+            # We still keep a timeout as a fallback, but reduce it to 30 seconds
             # This helps prevent the button from staying visible indefinitely
-            self.after(60000, self._ensure_close_tab_button_hidden)  # 60 seconds timeout
+            self.after(30000, self._ensure_close_tab_button_hidden)  # 30 seconds timeout

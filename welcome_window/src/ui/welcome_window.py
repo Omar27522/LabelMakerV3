@@ -21,11 +21,13 @@ from src.utils.sheets_operations import write_to_google_sheet, create_google_she
 from src.utils.returns_operations import load_returns_data, update_log_file, create_returns_dialog, create_edit_dialog
 from src.utils.settings_operations import create_settings_dialog, update_sheets_status_display
 from src.utils.dialog_handlers import (
-    create_settings_dialog_handler, create_google_sheets_dialog_handler
+    create_settings_dialog_handler, create_google_sheets_dialog_handler,
+    create_url_settings_dialog_handler
 )
 from src.ui.create_label_frame import CreateLabelFrame
 from src.ui.returns_data_dialog import create_returns_data_dialog
 from src.ui.jdl_automation_frame import JDLAutomationFrame
+from src.ui.macro_editor_enhanced import create_macro_editor_enhanced
 
 # Third-party imports
 import pyautogui
@@ -89,7 +91,9 @@ class WelcomeWindow(tk.Tk):
             'create_label': None,
             'returns_data': None,
             'settings': None,
-            'google_sheets': None
+            'google_sheets': None,
+            'url_settings': None,
+            'macro_editor': None
         }
 
         # Window setup
@@ -168,6 +172,7 @@ class WelcomeWindow(tk.Tk):
             'labels': ('#FF9800', '#FFCC80'),       # Orange, Light Orange
             'settings': ('#9E9E9E', '#E0E0E0')      # Gray, Light Gray
         }
+        
         
         # Define button specifications
         button_specs = [
@@ -304,9 +309,10 @@ class WelcomeWindow(tk.Tk):
             create_label_frame = CreateLabelFrame(
                 self.container_frame, 
                 self.config_manager, 
-                self.update_label_count,
+                lambda: self.update_label_count(),
                 self.return_to_welcome
             )
+            
             create_label_frame.pack(fill='both', expand=True)
             
             # Store reference to the frame
@@ -414,19 +420,134 @@ class WelcomeWindow(tk.Tk):
                 dialog.focus_force()
                 return
         
-        # Call the create_settings_dialog_handler function from our dialog_handlers module
-        dialog = create_settings_dialog_handler(
+        # Define the callbacks needed for the settings dialog
+        def update_label_count_callback(directory=None):
+            self.update_label_count(directory)
+            
+        def open_sheets_dialog_callback():
+            self.open_sheets_dialog()
+            
+        def save_settings_callback(dialog, directory, transparency_enabled=False, transparency_level=0.9, 
+                                   reverseinbound_creation=False, jdl_automation_enabled=False,
+                                   jdl_username='', jdl_password='', scan_url='', receive_url='',
+                                   exception_base_url=''):
+            # Save settings and close dialog
+            self.config_manager.settings.last_directory = directory
+            
+            # Save additional settings
+            self.config_manager.settings.transparency_enabled = transparency_enabled
+            self.config_manager.settings.transparency_level = transparency_level
+            self.config_manager.settings.reverseinbound_creation = reverseinbound_creation
+            self.config_manager.settings.jdl_automation_enabled = jdl_automation_enabled
+            self.config_manager.settings.jdl_username = jdl_username
+            self.config_manager.settings.jdl_password = jdl_password
+            self.config_manager.settings.scan_url = scan_url
+            self.config_manager.settings.receive_url = receive_url
+            self.config_manager.settings.exception_base_url = exception_base_url
+            
+            if self.config_manager.save_settings():
+                self.open_dialogs['settings'] = None
+                dialog.destroy()
+                self.update_label_count()
+            
+        # Create settings dialog
+        dialog, _ = create_settings_dialog(
             self,
             self.config_manager,
-            self.update_label_count
+            update_label_count_callback,
+            open_sheets_dialog_callback,
+            save_settings_callback
         )
+        
+        # Find the button frame and add the macro editor button
+        for child in dialog.winfo_children():
+            if isinstance(child, tk.Frame):
+                for subchild in child.winfo_children():
+                    if isinstance(subchild, tk.Frame) and len(subchild.winfo_children()) > 0:
+                        # Check if this is the button frame (usually at the bottom)
+                        if subchild.winfo_children() and isinstance(subchild.winfo_children()[0], tk.Button):
+                            # This is likely the button frame
+                            button_frame = subchild
+                            
+                            # Add Macro Editor button
+                            from src.utils.ui_components import create_button
+                            macro_editor_button = create_button(
+                                button_frame,
+                                text="Macro Editor",
+                                command=self.open_macro_editor,
+                                bg="#FF9800",  # Orange
+                                fg="white",
+                                padx=10,
+                                pady=5
+                            )
+                            macro_editor_button.pack(side=tk.LEFT, padx=5, pady=5)
+                            break
         
         # Store reference to the dialog
         self.open_dialogs['settings'] = dialog
         
+        # Find the buttons frame in the dialog
+        for child in dialog.winfo_children():
+            if isinstance(child, tk.Frame):
+                for subchild in child.winfo_children():
+                    if isinstance(subchild, tk.Frame) and len(subchild.winfo_children()) > 0:
+                        # This is likely the buttons frame
+                        buttons_frame = subchild
+                        
+                        # Add URL Settings button
+                        url_settings_button = tk.Button(
+                            buttons_frame,
+                            text="URL Settings",
+                            command=self.url_settings_action,
+                            bg="#2196F3",  # Blue
+                            fg="white",
+                            font=("Arial", 12),
+                            width=12
+                        )
+                        url_settings_button.pack(side=tk.LEFT, padx=10, before=buttons_frame.winfo_children()[0])
+                        break
+        
         # Set up callback for when dialog is closed
         def on_dialog_close():
             self.open_dialogs['settings'] = None
+            dialog.destroy()
+            
+        dialog.protocol("WM_DELETE_WINDOW", on_dialog_close)
+    
+    def url_settings_action(self):
+        """Open the URL Settings dialog"""
+        # Check if dialog is already open
+        if 'url_settings' in self.open_dialogs and self.open_dialogs['url_settings'] is not None:
+            # If dialog exists but was destroyed, remove the reference
+            if not self.open_dialogs['url_settings'].winfo_exists():
+                self.open_dialogs['url_settings'] = None
+            else:
+                # Dialog exists, bring it to front
+                dialog = self.open_dialogs['url_settings']
+                
+                # Check if dialog is minimized (iconified)
+                if dialog.state() == 'iconic':
+                    dialog.deiconify()  # Restore the window
+                
+                dialog.lift()
+                dialog.focus_force()
+                return
+        
+        # Create URL Settings dialog
+        dialog = create_url_settings_dialog_handler(
+            self,
+            self.config_manager,
+            None  # No update callback needed
+        )
+        
+        # Store reference to the dialog
+        if 'url_settings' not in self.open_dialogs:
+            self.open_dialogs['url_settings'] = None
+        self.open_dialogs['url_settings'] = dialog
+        
+        # Set up callback for when dialog is closed
+        def on_dialog_close():
+            self.open_dialogs['url_settings'] = None
             dialog.destroy()
             
         dialog.protocol("WM_DELETE_WINDOW", on_dialog_close)
@@ -701,6 +822,37 @@ class WelcomeWindow(tk.Tk):
             print(f"Error in no_record_label_action: {str(e)}")
             # Return to welcome screen
             self.return_to_welcome()
+    
+    def open_macro_editor(self):
+        """Open the macro editor dialog"""
+        # Check if dialog is already open
+        if self.open_dialogs['macro_editor'] is not None:
+            # If dialog exists but was destroyed, remove the reference
+            if not self.open_dialogs['macro_editor'].winfo_exists():
+                self.open_dialogs['macro_editor'] = None
+            else:
+                # Dialog exists, bring it to front
+                dialog = self.open_dialogs['macro_editor']
+                
+                # Check if dialog is minimized (iconified)
+                if dialog.state() == 'iconic':
+                    dialog.deiconify()  # Restore the window
+                
+                dialog.lift()
+                dialog.focus_force()
+                return
+        
+        # Create enhanced macro editor dialog
+        dialog = create_macro_editor_enhanced(self)
+        
+        # Store reference to the dialog
+        self.open_dialogs['macro_editor'] = dialog
+        
+        # Set up callback for when dialog is closed
+        def on_dialog_close():
+            self.open_dialogs['macro_editor'] = None
+            
+        dialog.protocol("WM_DELETE_WINDOW", on_dialog_close)
     
     def jdl_automation_action(self):
         """Handle the JDL Automation button click"""

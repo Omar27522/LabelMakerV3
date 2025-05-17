@@ -17,6 +17,7 @@ from src.utils.returns_operations import load_returns_data, update_log_file, cre
 from src.utils.settings_operations import create_settings_dialog
 from src.utils.sheets_operations import create_google_sheets_dialog
 from src.config.config_manager import ConfigManager
+from src.ui.url_settings_dialog import URLSettingsDialog
 
 def set_taskbar_icon(dialog, icon_name):
     """
@@ -128,7 +129,7 @@ def create_settings_dialog_handler(parent, config_manager, update_label_count_ca
         The created settings dialog
     """
     # Function to handle saving settings
-    def save_settings(dialog, directory, transparency_enabled=None, transparency_level=None, reverseinbound_creation=None, jdl_automation_enabled=None, jdl_username=None, jdl_password=None):
+    def save_settings(dialog, directory, transparency_enabled=None, transparency_level=None, reverseinbound_creation=None, jdl_automation_enabled=None, jdl_username=None, jdl_password=None, scan_url=None, receive_url=None, exception_base_url=None):
         # Save the directory to settings
         config_manager.settings.last_directory = directory
         
@@ -153,6 +154,16 @@ def create_settings_dialog_handler(parent, config_manager, update_label_count_ca
             
         if jdl_password is not None:
             config_manager.settings.jdl_password = jdl_password
+            
+        # Save URL settings if provided
+        if scan_url is not None:
+            config_manager.settings.scan_url = scan_url
+            
+        if receive_url is not None:
+            config_manager.settings.receive_url = receive_url
+            
+        if exception_base_url is not None:
+            config_manager.settings.exception_base_url = exception_base_url
         
         # Save all settings
         config_manager.save_settings()
@@ -214,3 +225,26 @@ def create_google_sheets_dialog_handler(parent, config_manager, update_callback=
     set_taskbar_icon(sheets_dialog, "icon_64.png")
     
     return sheets_dialog
+
+def create_url_settings_dialog_handler(parent, config_manager, update_callback=None):
+    """
+    Create a URL Settings dialog with handlers for saving URL settings.
+    
+    Args:
+        parent: The parent window
+        config_manager: The configuration manager
+        update_callback: Optional callback to update the UI after settings are saved
+        
+    Returns:
+        The created URL Settings dialog
+    """
+    # Create URL Settings dialog
+    url_settings_dialog = URLSettingsDialog(parent, config_manager, update_callback)
+    
+    # Make this dialog a transient window of the parent
+    url_settings_dialog.dialog.transient(parent)
+    
+    # Set window icon (not taskbar icon)
+    set_taskbar_icon(url_settings_dialog.dialog, "link_64.png")
+    
+    return url_settings_dialog.dialog

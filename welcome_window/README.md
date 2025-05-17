@@ -44,6 +44,7 @@ welcome_window/
 │   │   ├── container_card_dialog.py
 │   │   ├── window_state.py
 │   │   ├── window_transparency.py
+│   │   ├── frame_patcher.py      # UI patching for tracking number issues
 │   │   └── __init__.py
 │   ├── utils/                    # Utility modules
 │   │    ├── app_logger.py
@@ -65,10 +66,14 @@ welcome_window/
 │   │    ├── ui_utils.py
 │   │    ├── window_utils.py
 │   │    ├── jdl_automation.py
-│   │    └── receive.py
+│   │    ├── receive.py
+│   │    ├── ui_state_manager.py  # State management for toggle modes
+│   │    ├── ui_patch.py          # UI patching utilities
+│   │    └── patch_integrator.py  # Integration for UI patches
 │   └── Requrements.txt
 ├── label_maker_settings.json     # Application settings
 ├── main.pyw                     # Application entry point
+├── patch_tracking_issues.py     # Entry point for tracking number fixes
 ├── README.md
 ├── credentials.json
 ```
@@ -147,6 +152,7 @@ welcome_window/
    - "R" toggle button for activating receive mode
    - Container card dialog for tracking incoming shipments
    - Fully automated JDL scan process with keyboard simulation
+   - Fixed tracking number scanning in different toggle states (R mode, E mode, untoggled)
 
 2. **Labels Tab** in Returns Data dialog:
    - Database-backed label metadata storage
@@ -163,6 +169,8 @@ welcome_window/
    - Single instance enforcement using mutex/socket
    - Cross-platform DPI awareness
    - Automated temp file cleanup
+   - Non-invasive UI state management for toggle modes
+   - Improved browser tab state handling
 
 ## Installation
 
@@ -189,6 +197,21 @@ python main.pyw
 - The welcome window provides access to all main features
 - Use the Records/Labels tabs in Returns Data for managing records and labels
 - Access hidden features (like No Record Label) by clicking the "Ver." text in the main window
+
+### Tracking Number Scanning Fix
+
+To enable the tracking number scanning fix for different toggle states:
+
+```python
+# In main.pyw after creating the WelcomeWindow
+root = WelcomeWindow()
+
+# Apply tracking number scanning fixes
+import patch_tracking_issues
+patch_tracking_issues.apply_patches(root)
+```
+
+This patch fixes issues with tracking number scanning in different toggle states (R mode, E mode, or untoggled) without modifying the original code.
 
 ### Main Functions
 - **User/Create Label**: Create and print labels with tracking numbers and SKUs

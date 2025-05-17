@@ -82,22 +82,14 @@ class ReceiveManager:
         try:
             logger.info("Opening JDL Global IWMS scan page")
             
-            # Get the receive URL from settings or use default
-            url = self.config_manager.settings.receive_url
+            # Get the scan URL from settings or use default
+            url = self.config_manager.settings.scan_url
             
             # Use default URL if not configured
             if not url:
                 url = "https://iwms.us.jdlglobal.com/#/scan"
-                logger.info(f"Using default receive URL: {url}")
-            else:
-                logger.info(f"Using configured receive URL: {url}")
-                
-            # Ensure the URL is used exactly as specified without any automatic additions
-            # Some browsers might add 'index.html' to URLs ending with '/'
-            if url.endswith('/'):
-                url = url.rstrip('/')
-                logger.info(f"Modified URL to prevent index redirect: {url}")
-                
+                logger.info(f"Using default scan URL: {url}")
+            
             # Track that we're opening a browser tab
             # This is important for proper UI state management
             from src.utils.jdl_automation import JDLAutomation
@@ -170,8 +162,8 @@ class ReceiveManager:
             logger.info("Starting JDL scan automation process using macro system")
             logger.info(f"Processing: Tracking={tracking_number}, Container={container_card}, SKU={sku}")
             
-            # Execute the receive_mode macro with the context
-            success = execute_macro('receive_mode', context)
+            # Execute the jdl_scan macro with the context
+            success = execute_macro('jdl_scan', context)
             
             # Restore original clipboard content
             pyperclip.copy(original_clipboard)
@@ -191,10 +183,10 @@ class ReceiveManager:
                 logger.warning(f"Could not reset browser tab state: {str(state_error)}")
             
             if success:
-                logger.info("Receive mode macro executed successfully")
+                logger.info("JDL scan macro executed successfully")
                 return True
             else:
-                logger.error("Receive mode macro execution failed")
+                logger.error("JDL scan macro execution failed")
                 return False
                 
         except Exception as e:
