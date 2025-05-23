@@ -425,7 +425,9 @@ class WelcomeWindow(tk.Tk):
             self.update_label_count(directory)
             
         def open_sheets_dialog_callback():
-            self.open_sheets_dialog()
+            # Prevent recursive call by directly creating the sheets dialog
+            from src.utils.sheets_operations import create_google_sheets_dialog
+            return create_google_sheets_dialog(self, self.config_manager)
             
         def save_settings_callback(dialog, directory, transparency_enabled=False, transparency_level=0.9, 
                                    reverseinbound_creation=False, jdl_automation_enabled=False,

@@ -147,18 +147,17 @@ class ReceiveWorkflowManager:
                 # Show the Close Tab button if it exists
                 if hasattr(frame, 'close_tab_button'):
                     frame.close_tab_button.pack(side=tk.RIGHT, padx=(5, 0))
-                return
+                # Don't return here, continue to ensure SKU field stays disabled
             
             # By default, disable the SKU field until tracking number is entered
             frame.field_widgets["SKU:"]["widget"].config(state="disabled")
             
-            # In receive mode (but not exceptions mode), we might allow blank tracking numbers
-            # so enable the SKU field if tracking is already blank
-            if receive_mode_enabled and not exceptions_mode_enabled and not frame.tracking_var.get().strip():
+            # Only enable the SKU field if a valid tracking number is entered
+            # This prevents enabling the SKU field without a tracking number
+            if frame.tracking_var.get().strip() and len(frame.tracking_var.get().strip()) > 12:
                 frame.field_widgets["SKU:"]["widget"].config(state="normal")
-            # If tracking number is already entered, enable the SKU field
-            elif frame.tracking_var.get().strip():
-                frame.field_widgets["SKU:"]["widget"].config(state="normal")
+            else:
+                frame.field_widgets["SKU:"]["widget"].config(state="disabled")
             
             # Hide the Close Tab button if it exists
             if hasattr(frame, 'close_tab_button'):

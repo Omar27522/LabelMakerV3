@@ -14,6 +14,7 @@ from tkinter import ttk, messagebox
 import pyautogui
 import subprocess
 import pyperclip
+import platform
 
 # Add the project root directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
@@ -54,6 +55,12 @@ class CreateLabelFrame(tk.Frame):
             return_to_welcome_callback: Callback function to return to welcome screen
             config_manager: The application's configuration manager
         """
+        # Flag to track initialization state to prevent flickering
+        self._initializing = True
+        
+        # Flag to track which phase of the receive workflow we're in
+        self._receive_workflow_phase = 0  # 0=not started, 1=after first browser tab, 2=after container card
+        
         super().__init__(parent, bg='white')
         self.return_to_welcome_callback = return_to_welcome_callback
         self.config_manager = config_manager
@@ -98,8 +105,20 @@ class CreateLabelFrame(tk.Frame):
             enabled=self.transparency_var.get()
         )
         
+        # Set up the UI in its final state immediately to prevent flickering
+        # Disable the SKU field
+        self.field_widgets["SKU:"]["widget"].config(state="disabled")
+        logging.info("Explicitly disabled SKU field during initialization")
+        
+        # Hide the Close Tab button
+        if hasattr(self, 'close_tab_button'):
+            self.close_tab_button.pack_forget()
+            
         # Set focus to tracking number field
         self._focus_tracking_field()
+        
+        # Mark initialization as complete
+        self.after(500, self._complete_initialization)
     
     def _create_ui(self):
         """Create the user interface elements"""
@@ -380,6 +399,9 @@ class CreateLabelFrame(tk.Frame):
                     self._update_status("Click 'Close Tab' button to continue", 'blue')
                 else:
                     # If JDL automation is not enabled, enable the SKU field immediately
+                    logging.info(f"JDL automation not used - enabling SKU field immediately")
+                    logging.info(f"JDL automation enabled setting: {hasattr(self.config_manager.settings, 'jdl_automation_enabled') and self.config_manager.settings.jdl_automation_enabled}")
+                    logging.info(f"Exceptions mode: {exceptions_mode_enabled}")
                     self.field_widgets["SKU:"]["widget"].config(state="normal")
                     self.field_widgets["SKU:"]["widget"].focus_set()
                     
@@ -877,13 +899,25 @@ class CreateLabelFrame(tk.Frame):
         
         # Disable the SKU field again
         self.field_widgets["SKU:"]["widget"].config(state="disabled")
+        logging.info("SKU field disabled during form clearing")
         
-        # Set focus to the tracking number field
-        self._focus_tracking_field()
+        # Schedule additional attempts to ensure the SKU field stays disabled
+        # This prevents other code from re-enabling it during the loop-around process
+        for delay in [100, 300, 500]:
+            self.after(delay, lambda: self.field_widgets["SKU:"]["widget"].config(state="disabled"))
+        
+    def _complete_initialization(self):
+        """Mark initialization as complete and perform any final setup"""
+        self._initializing = False
+        logging.info("CreateLabelFrame initialization complete")
+        
+        # Ensure the SKU field is disabled one final time
+        if hasattr(self, 'field_widgets') and "SKU:" in self.field_widgets:
+            self.field_widgets["SKU:"]["widget"].config(state="disabled")
     
     def _focus_tracking_field(self):
         """Set focus to the tracking number field if it's empty"""
-        if not self.tracking_var.get().strip():
+        if hasattr(self, 'field_widgets') and "Tracking Number:" in self.field_widgets:
             self.field_widgets["Tracking Number:"]["widget"].focus_set()
     
     def _update_status(self, message, color='black'):
@@ -1226,10 +1260,14 @@ class CreateLabelFrame(tk.Frame):
             # Hide the Close Tab button
             self.close_tab_button.pack_forget()
             
-    def _close_browser_tab(self):
+    def _close_browser_tab(self, from_simulate_method=False):
         """
         Close the browser tab and enable the SKU field.
         This method is called when the user clicks the 'Close Tab' button.
+        
+        Args:
+            from_simulate_method: Whether this method is being called from simulate_close_tab_button_click.
+                                Used to prevent recursive loops.
         """
         try:
             # Get the JDL automation instance
@@ -1240,17 +1278,30 @@ class CreateLabelFrame(tk.Frame):
             logging.info("Reset browser_tab_open flag to False")
             
             # Hide the Close Tab button
-            logging.info("Hiding the Close Tab button")
-            self._hide_close_tab_button()
+            if hasattr(self, 'close_tab_button'):
+                self.close_tab_button.pack_forget()
+                logging.info("Close Tab button hidden directly")
             
-            # Enable the SKU field
+            # Enable the SKU field for the current tracking number
             if "SKU:" in self.field_widgets:
+                # Only clear the SKU field, preserve the tracking number
+                self.sku_var.set("")
+                
+                # Enable the SKU field so user can enter SKU for the current tracking number
                 self.field_widgets["SKU:"]["widget"].config(state="normal")
+                logging.info("SKU field enabled after browser tab closed")
+                
+                # Focus on the SKU field for immediate entry
                 self.field_widgets["SKU:"]["widget"].focus_set()
-                logging.info("Enabled SKU field")
-            
+                
+                # Schedule multiple focus attempts to ensure SKU field gets focus
+                for delay in [50, 100, 200, 300]:
+                    self.after(delay, lambda: self.field_widgets["SKU:"]["widget"].focus_set())
+                
+                logging.info("SKU field focused for entry")
+                    
             # Update status
-            self._update_status("Browser tab closed. Continue with SKU entry.", 'green')
+            self._update_status("Browser tab closed. Ready for next tracking number.", 'green')
             
             # Bring the window to the front and force focus
             self.winfo_toplevel().lift()
@@ -1269,12 +1320,22 @@ class CreateLabelFrame(tk.Frame):
             self._update_status(f"Error in tab close handler: {error_msg}", 'red')
             logging.error(f"Error in tab close handler: {error_msg}")
             
-            # Still enable the SKU field in case of error
-            if "SKU:" in self.field_widgets:
-                self.field_widgets["SKU:"]["widget"].config(state="normal")
-            
-            # Still try to hide the button in case of error
-            self._hide_close_tab_button()
+            # Still try to hide the button and enable the SKU field in case of error
+            try:
+                # Use from_close_tab_method=True to prevent recursive loop
+                if not from_simulate_method:
+                    self.simulate_close_tab_button_click(enable_sku=True, from_close_tab_method=True)
+                else:
+                    # Direct fallback if we're already coming from simulate method
+                    if "SKU:" in self.field_widgets:
+                        self.field_widgets["SKU:"]["widget"].config(state="normal")
+                    self._hide_close_tab_button()
+            except Exception as sim_error:
+                logging.error(f"Error in fallback simulate_close_tab_button_click: {str(sim_error)}")
+                # Direct fallback if the simulate method fails
+                if "SKU:" in self.field_widgets:
+                    self.field_widgets["SKU:"]["widget"].config(state="normal")
+                self._hide_close_tab_button()
         
         # Schedule additional attempts to hide the button just in case
         # This ensures it will be hidden even if there are timing issues
@@ -1323,31 +1384,42 @@ class CreateLabelFrame(tk.Frame):
         except Exception as e:
             logging.error(f"Error in _ensure_close_tab_button_hidden: {str(e)}")
     
-    def simulate_close_tab_button_click(self):
+    def simulate_close_tab_button_click(self, enable_sku=False, from_close_tab_method=False):
         """
         Simulate a click on the Close Tab button.
         This is used by JDLAutomation to force the button to be hidden.
+        
+        Args:
+            enable_sku: Whether to enable the SKU field after hiding the button.
+                       Default is False to preserve the disabled state during initialization.
+            from_close_tab_method: Whether this method is being called from _close_browser_tab.
+                                  Used to prevent recursive loops.
         """
-        logging.info("Simulating Close Tab button click")
+        logging.info("simulate_close_tab_button_click called - hiding Close Tab button")
         try:
-            # Directly call the _close_browser_tab method
-            if hasattr(self, '_close_browser_tab'):
-                self._close_browser_tab()
+            # Prevent recursive loop between this method and _close_browser_tab
+            if not from_close_tab_method and hasattr(self, '_close_browser_tab'):
+                # Only call _close_browser_tab if we're not already being called from it
+                self._close_browser_tab(from_simulate_method=True)
                 logging.info("Successfully simulated Close Tab button click")
             else:
-                # If the method doesn't exist, just hide the button
+                # Just hide the button without calling _close_browser_tab again
                 if hasattr(self, 'close_tab_button'):
                     self.close_tab_button.pack_forget()
-                    logging.info("Directly hid Close Tab button")
+                    logging.info("Close Tab button hidden successfully")
                     
-                # Enable the SKU field
-                if "SKU:" in self.field_widgets:
+                # Only enable the SKU field if explicitly requested
+                # This prevents enabling it during initialization
+                if enable_sku and "SKU:" in self.field_widgets:
                     self.field_widgets["SKU:"]["widget"].config(state="normal")
                     self.field_widgets["SKU:"]["widget"].focus_set()
-                    logging.info("Enabled SKU field")
+                    logging.info("SKU field enabled and focused")
         except Exception as e:
             logging.error(f"Error simulating Close Tab button click: {str(e)}")
-    
+        
+        # Return True to indicate success
+        return True
+
     def _on_browser_tab_closed(self, event=None):
         """
         Handle the custom BrowserTabClosed event.
@@ -1363,14 +1435,80 @@ class CreateLabelFrame(tk.Frame):
                 self.close_tab_button.pack_forget()
                 logging.info("Close Tab button hidden due to BrowserTabClosed event")
             
-            # Enable the SKU field
-            if "SKU:" in self.field_widgets:
-                self.field_widgets["SKU:"]["widget"].config(state="normal")
-                self.field_widgets["SKU:"]["widget"].focus_set()
-                logging.info("SKU field enabled due to BrowserTabClosed event")
+            # Check if we're in receive mode
+            receive_mode_enabled = hasattr(self, 'receive_mode_var') and self.receive_mode_var.get()
+            
+            if receive_mode_enabled:
+                # In receive mode, behavior depends on which phase we're in
+                # For receive mode, we need to handle the workflow differently
+                # Store the current tracking number to ensure it's not lost
+                current_tracking = self.tracking_var.get()
+                logging.info(f"Preserving tracking number: {current_tracking}")
                 
-            # Update status
-            self._update_status("Browser tab closed. Continue with SKU entry.", 'green')
+                # Check which phase we're in based on the container card dialog
+                # We can determine this by checking if we have a current_container_card attribute
+                is_second_phase = hasattr(self, 'current_container_card') and self.current_container_card
+                
+                if is_second_phase:
+                    # Second phase - after container card entry and second browser tab
+                    logging.info("Detected second phase of receive workflow (after container card)")
+                    
+                    if "SKU:" in self.field_widgets:
+                        # Clear fields
+                        self.tracking_var.set("")
+                        self.sku_var.set("")
+                        
+                        # Disable SKU field
+                        self.field_widgets["SKU:"]["widget"].config(state="disabled")
+                        logging.info("SKU field disabled after complete receive workflow")
+                        
+                        # Focus on tracking number field
+                        if "Tracking Number:" in self.field_widgets:
+                            self.field_widgets["Tracking Number:"]["widget"].focus_set()
+                            logging.info("Focus set to tracking number field for next entry")
+                        
+                        # Reset phase and container card
+                        self._receive_workflow_phase = 0
+                        self.current_container_card = None
+                        logging.info("Receive workflow phase reset to 0 (workflow complete)")
+                        
+                        # Update status
+                        self._update_status("Receive workflow completed. Ready for next entry.", 'green')
+                else:
+                    # First phase - after tracking number entry and first browser tab
+                    logging.info("Detected first phase of receive workflow (after tracking number)")
+                    
+                    if "SKU:" in self.field_widgets:
+                        # Only clear the SKU field, preserve the tracking number
+                        self.sku_var.set("")
+                        
+                        # Enable the SKU field
+                        self.field_widgets["SKU:"]["widget"].config(state="normal")
+                        self.field_widgets["SKU:"]["widget"].focus_set()
+                        logging.info("SKU field enabled after first browser tab closed")
+                        
+                        # Update phase
+                        self._receive_workflow_phase = 1
+                        logging.info("Receive workflow phase updated to 1 (after first browser tab)")
+                    
+                    # Update status
+                    self._update_status("Browser tab closed. Continue with SKU entry.", 'green')
+                    
+                    # Ensure the tracking number is preserved
+                    self.tracking_var.set(current_tracking)
+            else:
+                # Standard behavior - preserve tracking number and enable SKU field
+                if "SKU:" in self.field_widgets:
+                    # Only clear the SKU field, preserve the tracking number
+                    self.sku_var.set("")
+                    
+                    # Enable the SKU field
+                    self.field_widgets["SKU:"]["widget"].config(state="normal")
+                    self.field_widgets["SKU:"]["widget"].focus_set()
+                    logging.info("SKU field enabled due to BrowserTabClosed event")
+                    
+                # Update status
+                self._update_status("Browser tab closed. Continue with SKU entry.", 'green')
         except Exception as e:
             logging.error(f"Error handling BrowserTabClosed event: {str(e)}")
             
@@ -1443,34 +1581,48 @@ class CreateLabelFrame(tk.Frame):
         This ensures the Close Tab button is only visible when a browser tab is actually open.
         """
         try:
+            # Skip UI updates during initialization to prevent flickering
+            if hasattr(self, '_initializing') and self._initializing:
+                logging.debug("Skipping browser tab state check during initialization")
+                self.after(2000, self._check_browser_tab_state)
+                return
             # Get JDL automation instance
             jdl = JDLAutomation.get_instance(self.config_manager)
             
             # Check if a browser tab is actually open using a platform-specific approach
             browser_open = False
             
-            # On Windows, try to detect if any of the common browsers are running with our URL
-            if platform.system() == "Windows":
-                import subprocess
-                import re
-                
-                # Check for common browsers with our URL
-                browsers = ["chrome", "firefox", "msedge", "iexplore", "opera"]
-                for browser in browsers:
-                    try:
-                        # Use tasklist to check if browser is running
-                        result = subprocess.run(
-                            ["tasklist", "/FI", f"IMAGENAME eq {browser}.exe"],
-                            capture_output=True,
-                            text=True,
-                            check=False
-                        )
-                        if browser in result.stdout.lower():
-                            logging.debug(f"Detected running browser: {browser}")
-                            browser_open = True
-                            break
-                    except Exception as e:
-                        logging.debug(f"Error checking for browser {browser}: {str(e)}")
+            # Instead of just checking if browsers are running (which is too broad),
+            # we'll check if JDL automation thinks a browser tab is open
+            if hasattr(jdl, 'browser_tab_open'):
+                browser_open = jdl.browser_tab_open
+                logging.debug(f"Using JDL automation browser_tab_open state: {browser_open}")
+            else:
+                # Fallback to the old method if needed
+                if platform.system() == "Windows":
+                    import subprocess
+                    import re
+                    
+                    # Only check for browsers if JDL automation has been used
+                    # This prevents showing the button when browsers are open for other reasons
+                    scan_url = getattr(self.config_manager.settings, 'scan_url', '')
+                    if scan_url and hasattr(jdl, 'last_used') and jdl.last_used:
+                        browsers = ["chrome", "firefox", "msedge", "iexplore", "opera"]
+                        for browser in browsers:
+                            try:
+                                # Use tasklist to check if browser is running
+                                result = subprocess.run(
+                                    ["tasklist", "/FI", f"IMAGENAME eq {browser}.exe"],
+                                    capture_output=True,
+                                    text=True,
+                                    check=False
+                                )
+                                if browser in result.stdout.lower():
+                                    logging.debug(f"Detected running browser: {browser}")
+                                    browser_open = True
+                                    break
+                            except Exception as e:
+                                logging.debug(f"Error checking for browser {browser}: {str(e)}")
             
             # Update UI based on actual browser state
             if browser_open:
@@ -1492,10 +1644,18 @@ class CreateLabelFrame(tk.Frame):
                         logging.info("Browser detected as closed, hiding Close Tab button")
                         self._hide_close_tab_button()
                         
-                        # Enable the SKU field
-                        if "SKU:" in self.field_widgets:
+                        # Only enable the SKU field if a tracking number has been entered
+                        # This prevents enabling it during initialization
+                        tracking_number = self.tracking_var.get().strip() if hasattr(self, 'tracking_var') else ""
+                        if tracking_number and "SKU:" in self.field_widgets:
+                            logging.info(f"Browser closed and tracking number present ({tracking_number}), enabling SKU field")
                             self.field_widgets["SKU:"]["widget"].config(state="normal")
                             self.field_widgets["SKU:"]["widget"].focus_set()
+                        else:
+                            logging.info("Browser closed but no tracking number, keeping SKU field disabled")
+                            # Ensure the SKU field stays disabled
+                            if "SKU:" in self.field_widgets:
+                                self.field_widgets["SKU:"]["widget"].config(state="disabled")
                 
                 # Also update JDL automation state to match reality
                 if hasattr(jdl, 'browser_tab_open') and jdl.browser_tab_open:
@@ -1530,53 +1690,7 @@ class CreateLabelFrame(tk.Frame):
         except Exception as e:
             logging.error(f"Error in _ensure_close_tab_button_visible: {str(e)}")
         
-    def simulate_close_tab_button_click(self):
-        """
-        Update the UI as if the Close Tab button was clicked.
-        This method is thread-safe and can be called from any thread.
-{{ ... }}
-        """
-        logging.info("simulate_close_tab_button_click called - hiding Close Tab button")
-        
-        # Define a function to ensure the button is hidden
-        def ensure_button_hidden():
-            try:
-                # Make sure the button is hidden
-                if hasattr(self, 'close_tab_button'):
-                    self.close_tab_button.pack_forget()
-                    logging.info("Close Tab button hidden successfully")
-                else:
-                    logging.warning("close_tab_button attribute not found")
-                
-                # Enable and focus the SKU field
-                if hasattr(self, 'field_widgets') and "SKU:" in self.field_widgets:
-                    self.field_widgets["SKU:"]["widget"].config(state="normal")
-                    self.field_widgets["SKU:"]["widget"].focus_set()
-                    logging.info("SKU field enabled and focused")
-                else:
-                    logging.warning("SKU field widget not found")
-                
-                # Update status message
-                self._update_status("Browser tab automatically closed. Continue with SKU entry.", 'green')
-            except Exception as e:
-                logging.error(f"Error in ensure_button_hidden: {str(e)}")
-        
-        # Schedule the UI updates on the main thread with multiple attempts
-        self.after(0, ensure_button_hidden)
-        self.after(100, ensure_button_hidden)  # Try again after a short delay
-        self.after(500, ensure_button_hidden)  # And again after a longer delay
-        
-        # Bring the window to the front and force focus
-        self.after(100, lambda: self.winfo_toplevel().lift())
-        self.after(100, lambda: self.winfo_toplevel().focus_force())
-        self.after(100, lambda: self.winfo_toplevel().attributes('-topmost', True))
-        self.after(200, lambda: self.winfo_toplevel().attributes('-topmost', False))
-        
-        # Additional focus on the SKU field after a short delay
-        self.after(300, lambda: self.field_widgets["SKU:"]["widget"].focus_set())
-        
-        # Log the focus attempt
-        logging.info("Attempting to regain window focus after browser tab closure")
+    # This method has been removed as it was a duplicate of the one at line 1329
         
     def _open_container_card_dialog(self):
         """

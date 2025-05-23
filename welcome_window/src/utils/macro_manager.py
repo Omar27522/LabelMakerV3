@@ -352,14 +352,30 @@ class MacroManager:
                 self._active_dialogs[dialog_id] = True
                 
                 # Create a simple dialog that blocks until the user clicks OK
-                root = tk.Tk()
-                root.withdraw()  # Hide the main window
+                # Instead of creating a new Tk instance, find an existing Tkinter window
+                # to use as the parent for our dialog
+                parent = None
+                
+                # Try to find an existing Tkinter window
+                for widget in tk._default_root.winfo_children() if tk._default_root else []:
+                    if isinstance(widget, (tk.Toplevel, tk.Tk)):
+                        parent = widget
+                        break
+                        
+                # If no parent found, use the default root
+                if not parent and tk._default_root:
+                    parent = tk._default_root
+                    
+                # If still no parent, create a temporary one but don't destroy the app
+                if not parent:
+                    parent = tk.Toplevel()
+                    parent.withdraw()  # Hide this window
                 
                 # Position the dialog in the center of the screen
-                screen_width = root.winfo_screenwidth()
-                screen_height = root.winfo_screenheight()
+                screen_width = parent.winfo_screenwidth()
+                screen_height = parent.winfo_screenheight()
                 
-                dialog = tk.Toplevel(root)
+                dialog = tk.Toplevel(parent)
                 dialog.title(title)
                 dialog.geometry(f"450x250+{int(screen_width/2 - 225)}+{int(screen_height/2 - 125)}")
                 dialog.resizable(False, False)
@@ -440,10 +456,8 @@ class MacroManager:
                         if hasattr(self, '_active_dialogs') and dialog_id in self._active_dialogs:
                             del self._active_dialogs[dialog_id]
                             
-                        # Destroy the dialog and quit the mainloop
+                        # Just destroy the dialog without quitting the application
                         dialog.destroy()
-                        root.quit()
-                        root.destroy()
                     except Exception as e:
                         logger.error(f"Error closing dialog: {str(e)}")
                 
@@ -459,10 +473,13 @@ class MacroManager:
                 dialog.update_idletasks()
                 
                 try:
-                    # Run the dialog
-                    root.mainloop()
+                    # Instead of running a new mainloop, make this dialog modal
+                    # by grabbing focus and waiting for it to be destroyed
+                    dialog.grab_set()
+                    dialog.focus_set()
+                    dialog.wait_window(dialog)
                 except Exception as e:
-                    logger.error(f"Error in dialog mainloop: {str(e)}")
+                    logger.error(f"Error waiting for dialog: {str(e)}")
                 finally:
                     # Ensure cleanup happens even if there's an exception
                     if hasattr(self, '_active_dialogs') and dialog_id in self._active_dialogs:

@@ -350,6 +350,35 @@ class JDLAutomation:
             visual_logger.log(error_msg, "ERROR")
             return False
             
+    def close(self):
+        """
+        Close the browser tab or reset the browser state.
+        This is a utility method to reset the state without actually closing the browser tab,
+        since we can't programmatically close specific tabs.
+        
+        Returns:
+            bool: True if the state was reset successfully
+        """
+        try:
+            # Reset the browser state
+            JDLAutomation.browser_tab_open = False
+            logger.info("Reset browser tab state in JDLAutomation.close()")
+            
+            # Notify any UI components that might be listening for this event
+            try:
+                import tkinter as tk
+                if tk._default_root:
+                    for widget in tk._default_root.winfo_children():
+                        widget.event_generate("<<BrowserTabClosed>>", when="tail")
+                logger.info("Generated BrowserTabClosed event")
+            except Exception as event_error:
+                logger.warning(f"Could not generate BrowserTabClosed event: {str(event_error)}")
+            
+            return True
+        except Exception as e:
+            logger.error(f"Error in JDLAutomation.close(): {str(e)}")
+            return False
+    
     def _detect_default_browser(self):
         """
         Detect the default browser on the system and store it in the class variable.
@@ -904,7 +933,7 @@ def close(self):
                 frame = find_create_label_frame(tk._default_root)
                 if frame and hasattr(frame, 'simulate_close_tab_button_click'):
                     visual_logger.log(f"Found UI widget of type {frame.__class__.__name__}, simulating Close Tab button click", "INFO")
-                    frame.after(0, frame.simulate_close_tab_button_click)
+                    frame.after(0, lambda: frame.simulate_close_tab_button_click(enable_sku=True))
         except Exception as e:
             visual_logger.log(f"Error simulating Close Tab button click: {str(e)}", "WARNING")
             

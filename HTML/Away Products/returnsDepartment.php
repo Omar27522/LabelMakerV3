@@ -1,6 +1,3 @@
-<?php 
-?>
-
     <section>
     <h2>Returns Department</h2>
   <ul>
