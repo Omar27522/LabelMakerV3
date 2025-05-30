@@ -1,31 +1,12 @@
 
-<nav>
-        <ul>
-           | <!-- <li><a href="#introduction">Introduction</a></li> -->
-            <li><a href="#getting-started">Getting Started</a></li>
-            <li><a href="#main-navigation">Main Navigation</a></li>
-            <li><a href="#creating-labels">Creating Labels</a></li>
-            <li><a href="#no-record-labels">No Record Labels</a></li>
-            <li><a href="#google-sheets">Google Sheets</a></li>
-        </ul>
-    </nav>
+
 <section id="introduction">
     <h2>1. Introduction</h2>
-
-    
-
-
-
-
-
-
-
-
     <p>Welcome to the LabelMakerV3 User Guide! This comprehensive guide will help you learn how to use the LabelMakerV3
         application to create, manage, and print labels for your products. Whether you're a small business owner, an
         inventory manager, or someone who needs to organize products, this guide will walk you through every aspect of
         the application.</p>
-    <img src="media/software/welcome.jpg" alt="LabelMakerV3 Software">
+    <img src="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/welcome.jpg" alt="LabelMakerV3 Software">
     <h3>Purpose of this Guide</h3>
     <p>This guide is designed to provide step-by-step instructions for using all features of the LabelMakerV3
         application. By following this guide, you'll learn how to:</p>
@@ -41,8 +22,8 @@
     <h3>Overview of LabelMakerV3</h3>
     <p>LabelMakerV3 is a powerful yet user-friendly application that helps you create and manage product labels. The
         application allows you to:</p>
-    <ul><a href="media/software/label_maker_create_label.jpg"><img style="margin-right: 10%; float: right; width: 30%;"
-                src="media/software/label_maker_create_label.jpg" alt="LabelMakerV3 Software"></a>
+    <ul><a href="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/label_maker_create_label.jpg"><img style="margin-right: 10%; float: right; width: 30%;"
+                src="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/label_maker_create_label.jpg" alt="LabelMakerV3 Software"></a>
         <li>Generate barcodes automatically</li>
         <li>Create labels with product names, variants, and UPC codes</li>
         <li>Preview labels before printing</li>
@@ -59,11 +40,11 @@
         LabelMakerV3 for the first time or need a refresher on specific features, this guide will provide the
         information you need.</p>
 
-    <h3>What You'll Learn</h3><a href="media/software/label_maker_create_label_label.jpg"><img
-            style="margin-right: 10%; float: right; width: 20%;" src="media/software/label_maker_create_label_label.jpg"
-            alt="LabelMakerV3 Software"></a>
-    <p>By the end of this guide, you'll be able to:</p>
-    <ul>
+    <h3>What You'll Learn</h3>
+    <ul><a href="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/label_maker_create_label_label.jpg"><img
+    style="margin-right: 10%; float: right; width: 20%;" src="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/label_maker_create_label_label.jpg"
+    alt="LabelMakerV3 Software"></a>
+    By the end of this guide, you'll be able to:
         <li>Navigate the LabelMakerV3 interface confidently</li>
         <li>Create and print professional labels for your products</li>
         <li>Set up Google Sheets integration for inventory tracking</li>
@@ -71,6 +52,7 @@
         <li>Configure application settings to suit your needs</li>
         <li>Troubleshoot common issues that may arise</li>
     </ul>
+    
     <div class="highlight-box">
         <p>Let's get started with learning how to use LabelMakerV3!</p>
     </div>
