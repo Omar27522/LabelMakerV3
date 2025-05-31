@@ -2,29 +2,13 @@
 <?php echo basename(__FILE__); ?>
 <div class="container">
     <main>
-        
-    
-    <?php include 'navigationButtons.php'; navigationButtons('User'); ?>
-    <details id="UserSection" class="mainNavigationButtons"><summary><span class="<?= $buttons ?>"><?= $details ?></span></summary>
-    <summary><a href="#ManagementSection"><span class="<?= $buttons1 ?>"><?= $details1 ?></span></a></summary>
-    <summary><a href="#LabelsSection"><span class="<?= $buttons2 ?>"><?= $details2 ?></span></a></summary>
-    <summary><a href="#SettingsSection"><span class="<?= $buttons3 ?>"><?= $details3 ?></span></a></summary>
-    </details>
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        <?php include 'navigationButtons.php'; navigationButtons('User'); ?>
+        <details id="UserSection" class="mainNavigationButtons">
+            <summary><span class="<?= $buttons ?>"><?= $details ?></span></summary>
+            <summary><a href="#ManagementSection"><span class="<?= $buttons1 ?>"><?= $details1 ?></span></a></summary>
+            <summary><a href="#LabelsSection"><span class="<?= $buttons2 ?>"><?= $details2 ?></span></a></summary>
+            <summary><a href="#SettingsSection"><span class="<?= $buttons3 ?>"><?= $details3 ?></span></a></summary>
+        </details>
         <p>When you click on the User button, you'll be taken to the Create Label interface:</p>
         <ul style="column-count: 2;">
 
@@ -91,8 +75,8 @@
   gap: 10px; /* Adds space between columns */
 ">
                 <div class="image-map-container" id="return">
-                    <img src="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/create_label_default.jpg" alt="LabelMakerV3 Software"
-                        class="clickable-image">
+                    <img style="width: 100%;" src="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/create_label_default.jpg"
+                        alt="LabelMakerV3 Software" class="clickable-image">
 
                     <!-- Clickable areas - these are positioned with CSS -->
                     <a href="#return">
