@@ -14,7 +14,7 @@
                     </div>
 
                     <div class="image-map-container" id="numberOfLabels">
-                        <img src="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/welcome_connected.jpg" style="width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);" alt="LabelMakerV3 Software"
+                        <img src="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/welcome_connected.jpg" style="width: 100%;margin-bottom:.5rem; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);" alt="LabelMakerV3 Software"
                             class="clickable-image">
                         <!-- Clickable areas - these are positioned with CSS -->
                         <a href="#numberOfLabels">

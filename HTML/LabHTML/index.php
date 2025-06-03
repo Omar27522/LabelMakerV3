@@ -87,7 +87,7 @@
                     recorded, obtaining the total number of products that arrived, separating them into three main
                     categories: RS,
                     Non-RS, and Retail</h2>
-                <h2>Metal Basket</h2>
+                <p style="font-size: 2rem;font-weight: bold;">Metal Basket</p>
                 <h2>Once all tracking numbers are recorded, they will be placed in a metal basket to then be transported
                     to the
                     returns department. Once they arrive, they will be removed from the baskets and placed on a pallet

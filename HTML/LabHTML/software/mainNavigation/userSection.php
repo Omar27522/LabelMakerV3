@@ -10,65 +10,9 @@
             <summary><a href="#SettingsSection"><span class="<?= $buttons3 ?>"><?= $details3 ?></span></a></summary>
         </details>
         <p>When you click on the User button, you'll be taken to the Create Label interface:</p>
-        <ul style="column-count: 2;">
+      
 
-            <p>
-                <li><strong>Control Buttons:</strong></li>
-            <ul>
-                <li>Return: Returns to the Welcome screen</li>
-                <li>Page blue button: Returns Data Label Tab</li>
-                <li>Pin: Pins the window to the top of the screen</li>
-            </ul>
-            </p>
-
-            <p>
-                <li><strong>Create New Label Record Field:</strong>
-                    <ul>
-                        <li><strong>Tracking Number:</strong></li>
-                        <ul>
-                            <li>Enter the tracking number for the package.</li>
-                            <li>A Browser window will open to enter the tracking number.</li>
-                        </ul>
-                        <li><strong>SKU:</strong></li>
-                        <ul>
-                            <li>The field is not enabled until a tracking number is entered.</li>
-                            <li>Enter the SKU for the package.</li>
-                        </ul>
-                    </ul>
-                </li>
-            </p>
-
-            <p style="column-break-before: always;">
-                <li><strong>MP:</strong>
-                    <ul>
-                        <li>Mirror Print</li>
-                        <li>It prints the label in reverse. useful for thermal printers.</li>
-                    </ul>
-                </li>
-                <li><strong>Print:</strong></li>
-            <ul>
-                <li>Prints the label.</li>
-                <li>Disable it and it will still record the label, but it will not print.</li>
-            </ul>
-            <li><strong>TR:</strong></li>
-            <ul>
-                <li>
-                    Enable Transparency
-                </li>
-                <li>The program will become transparent when inactive.</li>
-                <li>Adjust transparency level (1-10) in Settings.</li>
-            </ul>
-            </li>
-            </p>
-
-            <p>
-                <li><strong>Print Label:</strong>
-                    <ul>
-                        <li>Sends the data to the cloud for record keeping.</li>
-                    </ul>
-                </li>
-            </p>
-        </ul>
+            
         <section>
             <aside style="display: grid;
   grid-template-columns: 1fr 1fr; /* Creates two equal columns */
@@ -77,7 +21,8 @@
                 <div class="image-map-container" id="return">
                     <img style="width: 100%;" src="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/create_label_default.jpg"
                         alt="LabelMakerV3 Software" class="clickable-image">
-
+                        
+              
                     <!-- Clickable areas - these are positioned with CSS -->
                     <a href="#return">
                         <div class="clickable-area" id="clReturn" data-tooltip="Return Button" tabindex="0">
@@ -181,26 +126,64 @@
                             <span class="button green" style="display:inline;">User</span>
                         </legend>
                         <ul>
-                            <li><strong>Control Buttons:</strong>
-                                <ul>
-                                    <li>Return: Returns to the Welcome screen</li>
-                                    <li>Page blue button: Returns Data Label Tab</li>
-                                    <li>Pin: Pins the window to the top of the screen</li>
-                                </ul>
-                            </li>
-                            <li><strong>Create New Label Record Field:</strong></li>
-                            <ul>
-                                <li><strong>Tracking Number:</strong></li>
-                                <li><strong>SKU:</strong></li>
-                                <li><strong>MP:Mirror Print</strong></li>
-                                <li><strong>Print:</strong></li>
-                                <li><strong>TR:transparency</strong></li>
-                            </ul>
-                            </li>
+                        <strong>Control Buttons:</strong>   
+                <li>Return: Returns to the Welcome screen</li>
+                <li>Page blue button: Returns Data Label Tab</li>
+                <li>Pin: Pins the window to the top of the screen</li>
+            </ul>
+            </p>
+
+            <p>
+                <li><strong>Create New Label Record Field:</strong>
+                    <ul>
+                        <li><strong>Tracking Number:</strong></li>
+                        <ul>
+                            <li>Enter the tracking number for the package.</li>
+                            <li>A Browser window will open to enter the tracking number.</li>
                         </ul>
+                        <li><strong>SKU:</strong></li>
+                        <ul>
+                            <li>The field is not enabled until a tracking number is entered.</li>
+                            <li>Enter the SKU for the package.</li>
+                        </ul>
+                    </ul>
+                </li>
+            </p>
+
+            <p style="column-break-before: always;">
+                <li><strong>MP:</strong>
+                    <ul>
+                        <li>Mirror Print</li>
+                        <li>It prints the label in reverse. useful for thermal printers.</li>
+                    </ul>
+                </li>
+                <li><strong>Print:</strong></li>
+            <ul>
+                <li>Prints the label.</li>
+                <li>Disable it and it will still record the label, but it will not print.</li>
+            </ul>
+            <li><strong>TR:</strong></li>
+            <ul>
+                <li>
+                    Enable Transparency
+                </li>
+                <li>The program will become transparent when inactive.</li>
+                <li>Adjust transparency level (1-10) in Settings.</li>
+            </ul>
+            </li>
+            </p>
+
+            <p>
+                <li><strong>Print Label:</strong>
+                    <ul>
+                        <li>Sends the data to the cloud for record keeping.</li>
+                    </ul>
+                </li>
+            </p>
+        </ul>
                     </fieldset>
                 </div>
-                <aside>
+</aside>
         </section>
     </main>
 </div>

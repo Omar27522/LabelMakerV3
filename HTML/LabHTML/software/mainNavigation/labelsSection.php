@@ -9,8 +9,10 @@
     <summary><a href="#ManagementSection"><span class="<?= $buttons2 ?>"><?= $details2 ?></span></a></summary>
     <summary><a href="#SettingsSection"><span class="<?= $buttons3 ?>"><?= $details3 ?></span></a></summary>
     </details>
-                    <p><span class="button orange">Labels</span> - For accessing and managing all your created labels</p>
-                </div>
+    <aside style="display: grid; grid-template-columns: 1fr 1fr;">
+               
+                    <p><span class="button orange">Labels and Returns Data</span></p>
+                </aside>
                 <p>The Labels section (orange button on the Welcome screen) allows you to access and manage all the labels you've created.</p>
                 <p>When you click on the Labels button, you'll see a list of all your labels with options to:</p>
                 <ul>
@@ -20,3 +22,5 @@
                     <li>Delete labels</li>
                     <li>Export label data</li>
                 </ul>
+                </aside>
+</div>

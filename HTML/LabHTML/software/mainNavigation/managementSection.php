@@ -49,7 +49,7 @@
 </fieldset>
 
                 <div class="image-map-container" id="labelMaker">
-                    <img src="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/label_maker.jpg" alt="LabelMakerV3 Software" class="clickable-image">
+                    <img src="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/label_maker.jpg" style="width: 100%;" alt="LabelMakerV3 Software" class="clickable-image">
                     
                     <!-- Clickable areas - these are positioned with CSS -->
                     <a href="#labelMaker"><div class="clickable-area" id="lmTop" data-tooltip="Always on Top of other windows" tabindex="0">
@@ -179,7 +179,7 @@
 </fieldset>
 
                 <div class="image-map-container" id="return">
-                    <img src="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/view_files.jpg" alt="LabelMakerV3 Software" class="clickable-image">
+                    <img src="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/HTML/LabelMakerV3/media/software/view_files.jpg" alt="LabelMakerV3 Software" class="clickable-image" style="width: 100%;">
                     
                     <!-- Clickable areas - these are positioned with CSS -->
                     <a href="#return"><div class="clickable-area" id="clReturn" data-tooltip="Return Button" tabindex="0">
@@ -271,16 +271,26 @@
 
         </main>
 
-        <fieldset>
-                <legend><div class="highlight-box">
-                    <p><span class="button">Management</span> - For administrative functions and database management</p>
-                </div></legend>
+        <fieldset class="highlight-box">
+                <legend>
+                    <span class="button">Settings</span>
+                </legend>
+
+                <aside style="display: grid; grid-template-columns: 1fr 1fr;">
+                    <img src="https://raw.githubusercontent.com/Omar27522/LabelMakerV3/refs/heads/main/Screen-Shots/Label%20Maker%20Settings.jpg" alt="LabelMakerV3 Software" class="clickable-image" style="width: 100%;">
+                <div>
                 <p>The Management section (blue button on the Welcome screen) provides access to administrative functions for managing your label database and integrations.</p>
                 <p>This section includes:</p>
                 <ul>
-                    <li>Database management</li>
-                    <li>User permissions (if applicable)</li>
-                    <li>System status information</li>
-                    <li>Integration management</li>
+                    <li>Large Font Size</li>
+                    <li>Medium Font Size</li>
+                    <li>Barcode Width</li>
+                    <li>Barcode height</li>
+                    <li>Upload CSV File</li>
+                    <li>Transparency Level</li>
+                    <li>Overlay over windows setting</li>
+                    <li>Save Settings</li>
                 </ul>
+                </div
+                </aside>
                 </fieldset>
